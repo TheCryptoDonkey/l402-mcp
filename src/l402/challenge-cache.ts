@@ -4,6 +4,7 @@ export interface CachedChallenge {
   paymentHash: string
   costSats: number | null
   expiresAt: number
+  url?: string
 }
 
 export class ChallengeCache {

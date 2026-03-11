@@ -61,6 +61,7 @@ export async function handleDiscover(
       paymentHash: decoded.paymentHash ?? '',
       costSats: decoded.costSats,
       expiresAt: Date.now() + decoded.expiry * 1000,
+      url: args.url,
     })
 
     const result: Record<string, unknown> = {

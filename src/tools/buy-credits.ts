@@ -17,19 +17,27 @@ export async function handleBuyCredits(
   const origin = new URL(args.url).origin
 
   try {
-    // Discovery mode: return tiers
+    // Discovery mode: probe a 402 to get credit_tiers from the response body
     if (args.amountSats === undefined) {
-      const response = await deps.fetchFn(`${origin}/create-invoice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
+      const response = await deps.fetchFn(args.url, { method: 'GET' })
 
-      const data = await response.json() as Record<string, unknown>
+      if (response.status !== 402) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: JSON.stringify({ error: `Expected 402 but got ${response.status}. This may not be an L402 endpoint.` }),
+          }],
+          isError: true as const,
+        }
+      }
+
+      let body: Record<string, unknown> = {}
+      try { body = await response.json() as Record<string, unknown> } catch { /* non-JSON */ }
+
       return {
         content: [{
           type: 'text' as const,
-          text: JSON.stringify({ tiers: data.tiers ?? [] }, null, 2),
+          text: JSON.stringify({ tiers: body.credit_tiers ?? [] }, null, 2),
         }],
       }
     }
@@ -42,7 +50,7 @@ export async function handleBuyCredits(
     })
 
     const data = await response.json() as Record<string, unknown>
-    const invoice = data.invoice as string
+    const invoice = data.bolt11 as string
     const macaroon = data.macaroon as string
     const creditSats = data.credit_sats as number
 

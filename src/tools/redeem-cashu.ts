@@ -34,8 +34,11 @@ export async function handleRedeemCashu(
 
     const invoiceData = await invoiceResponse.json() as Record<string, unknown>
     const paymentHash = invoiceData.payment_hash as string
-    const statusToken = invoiceData.status_token as string
     const macaroon = invoiceData.macaroon as string
+
+    // Extract statusToken from payment_url query param
+    const paymentUrl = invoiceData.payment_url as string
+    const statusToken = new URL(paymentUrl, origin).searchParams.get('token') ?? ''
 
     // Step 2: Redeem Cashu token
     const redeemResponse = await deps.fetchFn(`${origin}/cashu-redeem`, {
@@ -60,11 +63,11 @@ export async function handleRedeemCashu(
     }
 
     const redeemData = await redeemResponse.json() as Record<string, unknown>
-    const preimage = redeemData.preimage as string
-    const creditSats = redeemData.credit_sats as number
+    const tokenSuffix = redeemData.token_suffix as string
+    const creditSats = redeemData.credited as number
 
     // Store credential and remove spent token
-    deps.storeCredential(origin, macaroon, preimage, paymentHash)
+    deps.storeCredential(origin, macaroon, tokenSuffix, paymentHash)
     deps.removeToken(args.token)
 
     return {

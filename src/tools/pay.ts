@@ -23,12 +23,14 @@ export async function handlePay(
   let invoice = args.invoice
   let macaroon = args.macaroon
   const paymentHash = args.paymentHash
+  let cachedUrl: string | undefined
 
   if (paymentHash) {
     const cached = deps.cache.get(paymentHash)
     if (cached) {
       invoice = invoice ?? cached.invoice
       macaroon = macaroon ?? cached.macaroon
+      cachedUrl = cached.url
     }
   }
 
@@ -66,8 +68,9 @@ export async function handlePay(
   const result = await wallet.payInvoice(invoice)
 
   if (result.paid && result.preimage) {
+    const origin = cachedUrl ? new URL(cachedUrl).origin : ''
     deps.storeCredential(
-      '', // Origin will be set by the caller who knows the URL
+      origin,
       macaroon,
       result.preimage,
       paymentHash ?? '',
