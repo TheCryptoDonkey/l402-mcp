@@ -1,0 +1,125 @@
+# l402-mcp
+
+> l402-mcp is an MCP server that gives AI agents economic agency — the ability to discover, pay for, and consume any L402-gated API without human registration, API keys, or middlemen. It speaks the L402 protocol natively, carries its own payment methods, and makes autonomous purchasing decisions within human-set safety limits.
+
+l402-mcp is protocol-loyal: it works with any L402-compliant server (toll-booth, Aperture, or any conforming implementation), not just a specific vendor's stack. Bonus features activate automatically when talking to a toll-booth server. Three payment rails are supported — NWC (Nostr Wallet Connect), Cashu ecash, and human-in-the-loop — tried in that priority order so the agent picks the most autonomous option available.
+
+## Getting Started
+
+Run instantly with no configuration required:
+
+```bash
+npx l402-mcp
+```
+
+For HTTP transport (useful for remote agents or multi-client setups):
+
+```bash
+TRANSPORT=http npx l402-mcp
+```
+
+### Claude Desktop / Cursor
+
+Add to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "l402": {
+      "command": "npx",
+      "args": ["l402-mcp"],
+      "env": {
+        "NWC_URI": "nostr+walletconnect://...",
+        "MAX_AUTO_PAY_SATS": "1000"
+      }
+    }
+  }
+}
+```
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NWC_URI` | — | Nostr Wallet Connect URI for autonomous Lightning payments |
+| `CASHU_TOKENS` | — | Path to Cashu token store file |
+| `MAX_AUTO_PAY_SATS` | 100 | Safety cap; payments above this require human confirmation |
+| `CREDENTIAL_STORE` | `~/.l402-mcp/credentials.json` | Persistent macaroon/credential storage |
+| `TRANSPORT` | `stdio` | Transport mode: `stdio` or `http` |
+| `PORT` | 3402 | HTTP server port (when `TRANSPORT=http`) |
+
+## Key Concepts
+
+- **L402** — an HTTP payment protocol where a server responds to unauthenticated requests with HTTP 402, a Lightning invoice, and a macaroon. The client pays the invoice, then sends `Authorization: L402 <macaroon>:<preimage>` to access the API.
+- **Economic agency** — the agent discovers a service, reads the price, pays the invoice, and retrieves the data, all within a single tool call. No human registration required.
+- **Safety cap** — `MAX_AUTO_PAY_SATS` sets the maximum any single autonomous payment can be. Above this limit, the agent asks for human approval.
+- **Credential store** — paid macaroons are persisted locally. Subsequent requests to the same server reuse credentials rather than paying again.
+- **Credit balance** — many L402 servers (including toll-booth) grant a credit balance after payment. l402-mcp tracks and caches that balance so the agent can reason about remaining capacity.
+
+## Core L402 Tools
+
+These tools work with any L402-compliant server.
+
+### `l402_config`
+
+Introspect the agent's payment capabilities and current configuration. Returns wallet status (NWC connected, Cashu tokens loaded), the `MAX_AUTO_PAY_SATS` limit, and the number of stored credentials. Call this first so the agent knows what it can do autonomously.
+
+### `l402_discover`
+
+Probe an endpoint to discover its pricing without making a payment. Returns the invoice amount in satoshis, the macaroon challenge, and whether the server is a toll-booth instance (which enables extension tools). Use this before committing to a purchase so the agent can reason about value.
+
+### `l402_fetch`
+
+Make an HTTP request to an L402-protected endpoint. Handles the full payment flow automatically: detects 402 responses, pays the invoice if the amount is within the `MAX_AUTO_PAY_SATS` budget, stores the credential, and retries the request. Returns the response body on success. This is the primary tool for consuming L402 APIs.
+
+### `l402_pay`
+
+Pay a specific Lightning invoice directly. Tries payment methods in priority order: NWC, Cashu, human-in-the-loop. Use this when you have an invoice from a source other than `l402_fetch`, or when you want explicit control over the payment step.
+
+### `l402_credentials`
+
+List all stored L402 credentials and their cached credit balances. Shows which servers the agent has already paid and what capacity remains. Useful for auditing spend and avoiding redundant payments.
+
+### `l402_balance`
+
+Check the cached credit balance for a specific server URL. Returns the number of credits remaining without making a network request. Use this before calling `l402_fetch` to confirm there is sufficient balance before consuming credits.
+
+## toll-booth Extension Tools
+
+These tools activate automatically when the target server is a toll-booth instance (detected via `l402_discover`).
+
+### `l402_buy_credits`
+
+Browse and purchase volume discount credit tiers offered by the server. toll-booth servers can expose multiple tiers (e.g. 100 sats for 110 credits, 500 sats for 555 credits). The agent can inspect the tiers, reason about how many requests it needs, and buy the best-value tier upfront rather than paying per-request.
+
+### `l402_redeem_cashu`
+
+Redeem Cashu ecash tokens directly with the toll-booth server, bypassing the Lightning round-trip. toll-booth accepts raw ecash tokens and credits the balance immediately. This is faster and cheaper than melting tokens to pay a Lightning invoice when both sides support Cashu.
+
+## Payment Methods
+
+Three payment rails are tried in priority order:
+
+1. **NWC (Nostr Wallet Connect)** — fully autonomous. The agent pays invoices directly from a connected Lightning wallet via the NWC protocol. Configure with `NWC_URI`. No human interaction required.
+
+2. **Cashu** — fully autonomous. The agent melts ecash tokens to pay invoices. Configure with `CASHU_TOKENS` pointing to a token store file. No Lightning node required on the agent side.
+
+3. **Human-in-the-loop** — fallback when no autonomous payment method is configured or when a payment exceeds the `MAX_AUTO_PAY_SATS` cap. The agent presents a payment QR code and polls for settlement. Control returns to the agent once the human has paid.
+
+The agent can override the payment method per-call, or you can configure only the methods you want available.
+
+## Safety Model
+
+`MAX_AUTO_PAY_SATS` is the core safety primitive. Any autonomous payment above this threshold requires explicit human approval — the agent cannot bypass it. The agent reads this limit via `l402_config` and factors it into purchasing decisions (e.g. choosing a credit tier that fits within the cap, or asking the human before committing to a large purchase).
+
+The human stays in control of three things: the safety cap, which payment methods are available, and credential visibility. The agent operates within those boundaries, not around them.
+
+## Ecosystem
+
+**toll-booth** is the server counterpart to l402-mcp. It is L402 payment middleware that embeds into any Node.js application (Express 5, Deno, Bun, Cloudflare Workers), gates endpoints behind Lightning or Cashu payments, and supports credit tiers and free tiers. Any server protected by toll-booth automatically gets the full set of l402-mcp tools including the extension tools.
+
+https://github.com/TheCryptoDonkey/toll-booth
+
+**token-toll** demonstrates the AI inference use case: a proxy that gates access to AI model endpoints (Claude, GPT-4, etc.) behind L402 payments. Agents use l402-mcp to discover pricing, pay per-request or buy credit tiers, and consume inference capacity without pre-provisioned API keys.
+
+https://github.com/TheCryptoDonkey/token-toll
