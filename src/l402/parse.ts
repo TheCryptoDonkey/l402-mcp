@@ -9,8 +9,8 @@ export function parseL402Challenge(header: string): L402Challenge | null {
 
   const params = match[1]
 
-  const macaroonMatch = params.match(/macaroon="([A-Za-z0-9_\-=]+)"|macaroon=([A-Za-z0-9_\-=]+)(?:[,\s]|$)/)
-  const invoiceMatch = params.match(/invoice="(lnbc[A-Za-z0-9]+)"|invoice=(lnbc[A-Za-z0-9]+)(?:[,\s]|$)/)
+  const macaroonMatch = params.match(/macaroon="([A-Za-z0-9+/_\-=]+)"|macaroon=([A-Za-z0-9+/_\-=]+)(?:[,\s]|$)/)
+  const invoiceMatch = params.match(/invoice="(ln(?:bc(?:rt)?|tb)[A-Za-z0-9]+)"|invoice=(ln(?:bc(?:rt)?|tb)[A-Za-z0-9]+)(?:[,\s]|$)/)
 
   if (!macaroonMatch || !invoiceMatch) return null
 

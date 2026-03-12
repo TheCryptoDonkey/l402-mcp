@@ -65,4 +65,31 @@ describe('strict validation', () => {
     const result = parseL402Challenge(header)
     expect(result).not.toBeNull()
   })
+
+  it('accepts standard base64 macaroon with + and /', () => {
+    const header = 'L402 macaroon="AgEL+b29jYWx/b3N0AEI=", invoice="lnbc100n1ptest"'
+    const result = parseL402Challenge(header)
+    expect(result).not.toBeNull()
+    expect(result!.macaroon).toBe('AgEL+b29jYWx/b3N0AEI=')
+  })
+
+  it('accepts testnet invoice prefix (lntb)', () => {
+    const header = 'L402 macaroon="abc123", invoice="lntb100n1ptest"'
+    const result = parseL402Challenge(header)
+    expect(result).not.toBeNull()
+    expect(result!.invoice).toBe('lntb100n1ptest')
+  })
+
+  it('accepts regtest invoice prefix (lnbcrt)', () => {
+    const header = 'L402 macaroon="abc123", invoice="lnbcrt100n1ptest"'
+    const result = parseL402Challenge(header)
+    expect(result).not.toBeNull()
+    expect(result!.invoice).toBe('lnbcrt100n1ptest')
+  })
+
+  it('rejects invoice without valid Lightning prefix', () => {
+    const header = 'L402 macaroon="abc123", invoice="invalid100n1ptest"'
+    const result = parseL402Challenge(header)
+    expect(result).toBeNull()
+  })
 })
