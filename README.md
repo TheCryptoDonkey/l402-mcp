@@ -1,6 +1,8 @@
 # l402-mcp
 
 [![MIT licence](https://img.shields.io/badge/licence-MIT-blue.svg)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+[![Node](https://img.shields.io/badge/Node-%3E%3D18-green)](https://nodejs.org/)
 
 L402 client MCP that gives AI agents economic agency. Discover, pay for, and consume any L402-gated API - no human registration, no API keys, no middlemen.
 
@@ -96,6 +98,16 @@ Agent: "I need routing data from routing.trotters.cc"
 ## Safety
 
 `MAX_AUTO_PAY_SATS` caps any single autonomous payment. Above this limit, the agent must ask the human for approval. The agent can read this limit via `l402_config` and factor it into purchasing decisions.
+
+## Ecosystem
+
+| Project | Role |
+|---------|------|
+| [toll-booth](https://github.com/TheCryptoDonkey/toll-booth) | Payment-rail agnostic HTTP 402 middleware |
+| [token-toll](https://github.com/TheCryptoDonkey/token-toll) | Pay-per-token AI inference proxy (built on toll-booth) |
+| **[l402-mcp](https://github.com/TheCryptoDonkey/l402-mcp)** | **MCP client — AI agents discover, pay, and consume L402 APIs** |
+
+---
 
 ## Licence
 
