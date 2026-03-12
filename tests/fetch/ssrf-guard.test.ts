@@ -80,6 +80,24 @@ describe('validateUrl', () => {
       mockLookup.mockResolvedValue({ address: 'fe80::1', family: 6 })
       await expect(validateUrl('http://example.com')).rejects.toThrow(SsrfError)
     })
+
+    it('blocks fc00::/fd00:: (IPv6 ULA)', async () => {
+      mockLookup.mockResolvedValue({ address: 'fd12:3456:789a::1', family: 6 })
+      await expect(validateUrl('http://example.com')).rejects.toThrow(SsrfError)
+      await expect(validateUrl('http://example.com')).rejects.toThrow('private IP (ULA)')
+    })
+
+    it('blocks :: (IPv6 unspecified)', async () => {
+      mockLookup.mockResolvedValue({ address: '::', family: 6 })
+      await expect(validateUrl('http://example.com')).rejects.toThrow(SsrfError)
+      await expect(validateUrl('http://example.com')).rejects.toThrow('unspecified')
+    })
+
+    it('blocks 100.64.0.0/10 (CGNAT)', async () => {
+      mockLookup.mockResolvedValue({ address: '100.100.100.100', family: 4 })
+      await expect(validateUrl('http://example.com')).rejects.toThrow(SsrfError)
+      await expect(validateUrl('http://example.com')).rejects.toThrow('CGNAT')
+    })
   })
 
   describe('public IPs allowed', () => {

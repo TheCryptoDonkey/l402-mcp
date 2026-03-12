@@ -5,7 +5,9 @@ function isBlockedIp(address: string, family: number): string | null {
   if (family === 6) {
     const lower = address.toLowerCase()
     if (lower === '::1') return 'loopback'
+    if (lower === '::') return 'unspecified'
     if (lower.startsWith('fe80:')) return 'link-local'
+    if (lower.startsWith('fc') || lower.startsWith('fd')) return 'private IP (ULA)'
     const v4Match = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
     if (v4Match) return isBlockedIp(v4Match[1], 4)
     return null
@@ -20,6 +22,7 @@ function isBlockedIp(address: string, family: number): string | null {
   if (a === 192 && b === 168) return 'private IP'
   if (a === 169 && b === 254) return 'link-local'
   if (a === 0) return 'unspecified'
+  if (a === 100 && b >= 64 && b <= 127) return 'CGNAT'
 
   return null
 }
