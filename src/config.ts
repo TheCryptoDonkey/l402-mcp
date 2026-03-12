@@ -14,6 +14,8 @@ export interface L402Config {
   fetchMaxRetries: number
   fetchMaxResponseBytes: number
   ssrfAllowPrivate: boolean
+  corsOrigin: string | false
+  bindAddress: string
 }
 
 function assertNonNegativeInt(name: string, value: number): void {
@@ -44,6 +46,8 @@ export function loadConfig(): L402Config {
     fetchMaxRetries: parseInt(process.env.FETCH_MAX_RETRIES ?? '2', 10),
     fetchMaxResponseBytes: parseInt(process.env.FETCH_MAX_RESPONSE_BYTES ?? '10485760', 10),
     ssrfAllowPrivate: process.env.SSRF_ALLOW_PRIVATE === 'true',
+    corsOrigin: process.env.CORS_ORIGIN || false,
+    bindAddress: process.env.BIND_ADDRESS ?? '127.0.0.1',
   }
 
   assertNonNegativeInt('MAX_AUTO_PAY_SATS', config.maxAutoPaySats)

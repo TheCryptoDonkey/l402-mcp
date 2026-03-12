@@ -160,7 +160,7 @@ if (config.transport === 'http') {
   )
 
   const app = express()
-  app.use(cors({ origin: '*' }))
+  app.use(cors({ origin: config.corsOrigin }))
   app.use(express.json({ limit: '100kb' }))
 
   app.get('/health', (_req, res) => {
@@ -177,8 +177,9 @@ if (config.transport === 'http') {
     await transport.handleRequest(req, res, req.body)
   })
 
-  const httpServer = app.listen(config.port, '0.0.0.0', () => {
-    console.error(`l402-mcp HTTP server listening on 0.0.0.0:${config.port}`)
+  const httpServer = app.listen(config.port, config.bindAddress, () => {
+    console.error(`l402-mcp HTTP server listening on ${config.bindAddress}:${config.port}`)
+    console.error('Warning: HTTP transport is intended for local/trusted networks only. For public exposure, use a reverse proxy with TLS, rate limiting, and authentication.')
   })
 
   const shutdown = () => {

@@ -106,7 +106,7 @@ export function createResilientFetch(
               }
               chunks.push(value)
             }
-            const buffered = new Blob(chunks)
+            const buffered = new Blob(chunks as BlobPart[])
             response = new Response(buffered, {
               status: response.status,
               statusText: response.statusText,
