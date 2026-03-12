@@ -4,6 +4,7 @@ import type { WalletMethod } from '../wallet/types.js'
 import type { DecodedInvoice } from '../l402/bolt11.js'
 import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
 import type { SpendTracker } from '../spend-tracker.js'
+import { safeErrorMessage } from './safe-error.js'
 
 export interface BuyCreditsDeps {
   fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
@@ -100,7 +101,7 @@ export async function handleBuyCredits(
     return {
       content: [{
         type: 'text' as const,
-        text: JSON.stringify({ error: String(err) }),
+        text: JSON.stringify({ error: safeErrorMessage(err) }),
       }],
       isError: true as const,
     }

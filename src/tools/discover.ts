@@ -5,6 +5,7 @@ import { detectServer } from '../l402/detect.js'
 import type { ChallengeCache } from '../l402/challenge-cache.js'
 import type { DecodedInvoice } from '../l402/bolt11.js'
 import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
+import { safeErrorMessage } from './safe-error.js'
 
 export interface DiscoverDeps {
   fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
@@ -91,7 +92,7 @@ export async function handleDiscover(
     return {
       content: [{
         type: 'text' as const,
-        text: JSON.stringify({ error: String(err) }),
+        text: JSON.stringify({ error: safeErrorMessage(err) }),
       }],
       isError: true as const,
     }

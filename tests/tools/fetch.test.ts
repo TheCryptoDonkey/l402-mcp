@@ -229,6 +229,6 @@ describe('handleFetch', () => {
     const parsed = JSON.parse(result.content[0].text)
 
     expect(result.isError).toBe(true)
-    expect(parsed.error).toContain('ECONNREFUSED')
+    expect(parsed.error).toMatch(/Request failed|Network error/)
   })
 })

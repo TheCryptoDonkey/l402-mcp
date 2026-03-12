@@ -6,6 +6,8 @@ import type { DecodedInvoice } from '../l402/bolt11.js'
 import type { ServerInfo } from '../l402/detect.js'
 import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
 import type { SpendTracker } from '../spend-tracker.js'
+import { safeErrorMessage } from './safe-error.js'
+import { filterResponseHeaders } from './safe-headers.js'
 
 export interface FetchDeps {
   credentialStore: CredentialStore
@@ -59,7 +61,7 @@ export async function handleFetch(
           type: 'text' as const,
           text: JSON.stringify({
             status: response.status,
-            headers: Object.fromEntries(response.headers.entries()),
+            headers: filterResponseHeaders(response.headers),
             body,
             creditsRemaining: balance,
             satsPaid: 0,
@@ -128,7 +130,7 @@ export async function handleFetch(
             type: 'text' as const,
             text: JSON.stringify({
               status: retryResponse.status,
-              headers: Object.fromEntries(retryResponse.headers.entries()),
+              headers: filterResponseHeaders(retryResponse.headers),
               body: retryBody,
               creditsRemaining: retryBalance,
               satsPaid: decoded.costSats,
@@ -160,7 +162,7 @@ export async function handleFetch(
     return {
       content: [{
         type: 'text' as const,
-        text: JSON.stringify({ error: String(err) }),
+        text: JSON.stringify({ error: safeErrorMessage(err) }),
       }],
       isError: true as const,
     }

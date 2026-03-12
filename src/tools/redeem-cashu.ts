@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
+import { safeErrorMessage } from './safe-error.js'
 
 export interface RedeemCashuDeps {
   fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
@@ -85,7 +86,7 @@ export async function handleRedeemCashu(
     return {
       content: [{
         type: 'text' as const,
-        text: JSON.stringify({ error: String(err) }),
+        text: JSON.stringify({ error: safeErrorMessage(err) }),
       }],
       isError: true as const,
     }

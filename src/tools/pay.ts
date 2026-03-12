@@ -3,6 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { ChallengeCache } from '../l402/challenge-cache.js'
 import type { WalletMethod, WalletProvider } from '../wallet/types.js'
 import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
+import { safeErrorMessage } from './safe-error.js'
 
 export interface PayDeps {
   cache: ChallengeCache
@@ -97,10 +98,8 @@ export async function handlePay(
       type: 'text' as const,
       text: JSON.stringify({
         paid: result.paid,
-        preimage: result.preimage,
         credentialsStored,
         method: result.method,
-        reason: result.reason,
       }, null, 2),
     }],
   }

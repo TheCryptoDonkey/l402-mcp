@@ -38,7 +38,7 @@ describe('handlePay', () => {
 
     const parsed = JSON.parse(result.content[0].text)
     expect(parsed.paid).toBe(true)
-    expect(parsed.preimage).toBe('abc')
+    expect(parsed.preimage).toBeUndefined()
     expect(parsed.credentialsStored).toBe(true)
     expect(storeCredential).toHaveBeenCalled()
   })
@@ -122,7 +122,7 @@ describe('handlePay', () => {
 
     const parsed = JSON.parse(result.content[0].text)
     expect(parsed.paid).toBe(true)
-    expect(parsed.preimage).toBe('abc')
+    expect(parsed.preimage).toBeUndefined()
     expect(parsed.credentialsStored).toBe(false)
     expect(storeCredential).not.toHaveBeenCalled()
   })
@@ -207,7 +207,7 @@ describe('handlePay', () => {
     expect(setServerOrigin).toHaveBeenCalledWith('https://api.example.com')
     const parsed = JSON.parse(result.content[0].text)
     expect(parsed.paid).toBe(true)
-    expect(parsed.preimage).toBe('human-preimage')
+    expect(parsed.preimage).toBeUndefined()
     expect(storeCredential).toHaveBeenCalled()
   })
 })
