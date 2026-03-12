@@ -55,9 +55,19 @@ export async function handleBuyCredits(
     }, { retries: 0 })
 
     const data = await response.json() as Record<string, unknown>
-    const invoice = data.bolt11 as string
-    const macaroon = data.macaroon as string
-    const creditSats = data.credit_sats as number
+    const invoice = data.bolt11
+    const macaroon = data.macaroon
+    const creditSats = data.credit_sats
+
+    if (typeof invoice !== 'string' || typeof macaroon !== 'string') {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({ error: 'Invalid server response: missing bolt11 or macaroon' }),
+        }],
+        isError: true as const,
+      }
+    }
 
     // Check per-minute spend limit before paying
     if (deps.spendTracker.wouldExceed(args.amountSats, deps.maxSpendPerMinuteSats)) {
@@ -83,7 +93,7 @@ export async function handleBuyCredits(
           text: JSON.stringify({
             paid: true,
             amountSats: args.amountSats,
-            creditsReceived: creditSats,
+            creditsReceived: typeof creditSats === 'number' ? creditSats : null,
             method: payResult.method,
           }, null, 2),
         }],

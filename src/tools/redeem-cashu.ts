@@ -35,11 +35,21 @@ export async function handleRedeemCashu(
     }
 
     const invoiceData = await invoiceResponse.json() as Record<string, unknown>
-    const paymentHash = invoiceData.payment_hash as string
-    const macaroon = invoiceData.macaroon as string
+    const paymentHash = invoiceData.payment_hash
+    const macaroon = invoiceData.macaroon
+    const paymentUrl = invoiceData.payment_url
+
+    if (typeof paymentHash !== 'string' || typeof macaroon !== 'string' || typeof paymentUrl !== 'string') {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({ error: 'Invalid server response: missing payment_hash, macaroon, or payment_url' }),
+        }],
+        isError: true as const,
+      }
+    }
 
     // Extract statusToken from payment_url query param
-    const paymentUrl = invoiceData.payment_url as string
     const statusToken = new URL(paymentUrl, origin).searchParams.get('token') ?? ''
 
     // Step 2: Redeem Cashu token
@@ -65,8 +75,18 @@ export async function handleRedeemCashu(
     }
 
     const redeemData = await redeemResponse.json() as Record<string, unknown>
-    const tokenSuffix = redeemData.token_suffix as string
-    const creditSats = redeemData.credited as number
+    const tokenSuffix = redeemData.token_suffix
+    const creditSats = redeemData.credited
+
+    if (typeof tokenSuffix !== 'string') {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({ error: 'Invalid server response: missing token_suffix' }),
+        }],
+        isError: true as const,
+      }
+    }
 
     // Store credential and remove spent token
     deps.storeCredential(origin, macaroon, tokenSuffix, paymentHash)
@@ -77,7 +97,7 @@ export async function handleRedeemCashu(
         type: 'text' as const,
         text: JSON.stringify({
           redeemed: true,
-          creditsReceived: creditSats,
+          creditsReceived: typeof creditSats === 'number' ? creditSats : null,
           credentialsStored: true,
         }, null, 2),
       }],
