@@ -37,6 +37,7 @@ const resilientFetch = createResilientFetch(fetch, {
 
 // Shared state
 const credentialStore = new CredentialStore(config.credentialStorePath)
+await credentialStore.init()
 const cashuTokenStore = config.cashuTokensPath ? new CashuTokenStore(config.cashuTokensPath) : undefined
 const challengeCache = new ChallengeCache()
 

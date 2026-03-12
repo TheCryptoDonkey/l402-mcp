@@ -1,16 +1,31 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs'
+import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
+
+vi.mock('keytar', () => {
+  const store = new Map<string, string>()
+  return {
+    default: {
+      getPassword: vi.fn(async (_s: string, _a: string) => store.get(`${_s}:${_a}`) ?? null),
+      setPassword: vi.fn(async (_s: string, _a: string, p: string) => { store.set(`${_s}:${_a}`, p) }),
+    },
+  }
+})
+
 import { CredentialStore, type StoredCredential } from '../../src/store/credentials.js'
+import { isEncrypted } from '../../src/store/encryption.js'
 
 describe('CredentialStore', () => {
   let dir: string
+  let filePath: string
   let store: CredentialStore
 
-  beforeEach(() => {
+  beforeEach(async () => {
     dir = mkdtempSync(join(tmpdir(), 'l402-test-'))
-    store = new CredentialStore(join(dir, 'credentials.json'))
+    filePath = join(dir, 'credentials.json')
+    store = new CredentialStore(filePath)
+    await store.init()
   })
 
   afterEach(() => {
@@ -43,9 +58,10 @@ describe('CredentialStore', () => {
     expect(store.get('https://api.example.com')?.creditBalance).toBe(50)
   })
 
-  it('persists to disk and reloads', () => {
+  it('persists to disk and reloads', async () => {
     store.set('https://api.example.com', cred)
-    const store2 = new CredentialStore(join(dir, 'credentials.json'))
+    const store2 = new CredentialStore(filePath)
+    await store2.init()
     expect(store2.get('https://api.example.com')).toEqual(cred)
   })
 
@@ -62,10 +78,44 @@ describe('CredentialStore', () => {
     expect(store.count()).toBe(2)
   })
 
-  it('creates parent directory if missing', () => {
+  it('creates parent directory if missing', async () => {
     const deepPath = join(dir, 'sub', 'dir', 'creds.json')
     const deepStore = new CredentialStore(deepPath)
+    await deepStore.init()
     deepStore.set('https://a.com', cred)
     expect(deepStore.get('https://a.com')).toEqual(cred)
+  })
+
+  it('persists credentials in encrypted format', async () => {
+    const store = new CredentialStore(filePath)
+    await store.init()
+    store.set('https://api.example.com', {
+      macaroon: 'test-mac',
+      preimage: 'test-pre',
+      paymentHash: 'test-hash',
+      creditBalance: 100,
+      storedAt: new Date().toISOString(),
+      lastUsed: new Date().toISOString(),
+      server: 'toll-booth',
+    })
+    const raw = JSON.parse(readFileSync(filePath, 'utf8'))
+    expect(isEncrypted(raw)).toBe(true)
+  })
+
+  it('migrates plaintext credentials on first read', async () => {
+    mkdirSync(dirname(filePath), { recursive: true })
+    writeFileSync(filePath, JSON.stringify({
+      'https://old.example.com': {
+        macaroon: 'old-mac', preimage: 'old-pre', paymentHash: 'old-hash',
+        creditBalance: 50, storedAt: '2026-01-01T00:00:00Z',
+        lastUsed: '2026-01-01T00:00:00Z', server: null,
+      },
+    }))
+    const store = new CredentialStore(filePath)
+    await store.init()
+    const cred = store.get('https://old.example.com')
+    expect(cred?.macaroon).toBe('old-mac')
+    const raw = JSON.parse(readFileSync(filePath, 'utf8'))
+    expect(isEncrypted(raw)).toBe(true)
   })
 })
