@@ -16,15 +16,18 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
         return { paid: false, method: 'nwc', reason: 'Invalid NWC URI: missing relay or secret' }
       }
 
+      let secretBytes: Uint8Array | undefined
+      let conversationKey: Uint8Array | undefined
+
       try {
         const { getPublicKey, finalizeEvent } = await import('nostr-tools/pure')
         const { Relay } = await import('nostr-tools/relay')
         const { encrypt, decrypt, getConversationKey } = await import('nostr-tools/nip44')
 
-        const secretBytes = hexToBytes(secret)
+        secretBytes = hexToBytes(secret)
         getPublicKey(secretBytes)
 
-        const conversationKey = getConversationKey(secretBytes, walletPubkey)
+        conversationKey = getConversationKey(secretBytes, walletPubkey)
 
         const content = JSON.stringify({
           method: 'pay_invoice',
@@ -42,12 +45,18 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
 
         // Zeroise secret bytes now that signing is complete
         secretBytes.fill(0)
+        secretBytes = undefined
 
         const r = await Relay.connect(relay)
 
+        // Capture conversationKey in local const for the closure; clear
+        // the outer reference so the finally block doesn't double-zero.
+        const ck = conversationKey
+        conversationKey = undefined
+
         return new Promise<PaymentResult>((resolve) => {
           const timeout = setTimeout(() => {
-            conversationKey.fill(0)
+            ck.fill(0)
             r.close()
             resolve({ paid: false, method: 'nwc', reason: 'NWC payment timeout' })
           }, 60_000)
@@ -60,29 +69,34 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
             onevent: (responseEvent) => {
               clearTimeout(timeout)
               try {
-                const decrypted = decrypt(responseEvent.content, conversationKey)
+                const decrypted = decrypt(responseEvent.content, ck)
                 const response = JSON.parse(decrypted)
                 if (response.result?.preimage) {
-                  conversationKey.fill(0)
+                  ck.fill(0)
                   r.close()
                   resolve({ paid: true, preimage: response.result.preimage, method: 'nwc' })
                 } else {
-                  conversationKey.fill(0)
+                  ck.fill(0)
                   r.close()
                   resolve({ paid: false, method: 'nwc', reason: response.error?.message ?? 'Payment failed' })
                 }
-              } catch (err) {
-                conversationKey.fill(0)
+              } catch {
+                ck.fill(0)
                 r.close()
-                resolve({ paid: false, method: 'nwc', reason: String(err) })
+                resolve({ paid: false, method: 'nwc', reason: 'NWC response decryption failed' })
               }
             },
           })
 
           r.publish(event)
         })
-      } catch (err) {
-        return { paid: false, method: 'nwc', reason: String(err) }
+      } catch {
+        // Never expose raw error messages — they may contain the NWC secret
+        return { paid: false, method: 'nwc', reason: 'NWC payment failed' }
+      } finally {
+        // Ensure key material is always zeroised, even on unexpected errors
+        if (secretBytes) secretBytes.fill(0)
+        if (conversationKey) conversationKey.fill(0)
       }
     },
   }
