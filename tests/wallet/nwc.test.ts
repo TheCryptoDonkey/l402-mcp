@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
+import { hexToBytes } from '../../src/wallet/nwc.js'
 
 describe('createNwcWallet', () => {
   it('returns a wallet provider with method nwc', async () => {
@@ -22,5 +23,31 @@ describe('createNwcWallet', () => {
     const result = await wallet.payInvoice('lnbc100n1test')
     expect(result.paid).toBe(false)
     expect(result.reason).toContain('missing relay or secret')
+  })
+})
+
+describe('hexToBytes', () => {
+  it('converts valid hex string', () => {
+    const result = hexToBytes('deadbeef')
+    expect(result).toEqual(new Uint8Array([0xde, 0xad, 0xbe, 0xef]))
+  })
+
+  it('handles uppercase hex', () => {
+    const result = hexToBytes('DEADBEEF')
+    expect(result).toEqual(new Uint8Array([0xde, 0xad, 0xbe, 0xef]))
+  })
+
+  it('throws TypeError on odd-length string', () => {
+    expect(() => hexToBytes('abc')).toThrow(TypeError)
+    expect(() => hexToBytes('abc')).toThrow('even')
+  })
+
+  it('throws TypeError on non-hex characters', () => {
+    expect(() => hexToBytes('ghij')).toThrow(TypeError)
+    expect(() => hexToBytes('ghij')).toThrow('hex')
+  })
+
+  it('throws TypeError on empty string', () => {
+    expect(() => hexToBytes('')).toThrow(TypeError)
   })
 })

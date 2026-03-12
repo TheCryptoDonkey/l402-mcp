@@ -40,10 +40,14 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
           content: encrypted,
         }, secretBytes)
 
+        // Zeroise secret bytes now that signing is complete
+        secretBytes.fill(0)
+
         const r = await Relay.connect(relay)
 
         return new Promise<PaymentResult>((resolve) => {
           const timeout = setTimeout(() => {
+            conversationKey.fill(0)
             r.close()
             resolve({ paid: false, method: 'nwc', reason: 'NWC payment timeout' })
           }, 60_000)
@@ -59,13 +63,16 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
                 const decrypted = decrypt(responseEvent.content, conversationKey)
                 const response = JSON.parse(decrypted)
                 if (response.result?.preimage) {
+                  conversationKey.fill(0)
                   r.close()
                   resolve({ paid: true, preimage: response.result.preimage, method: 'nwc' })
                 } else {
+                  conversationKey.fill(0)
                   r.close()
                   resolve({ paid: false, method: 'nwc', reason: response.error?.message ?? 'Payment failed' })
                 }
               } catch (err) {
+                conversationKey.fill(0)
                 r.close()
                 resolve({ paid: false, method: 'nwc', reason: String(err) })
               }
@@ -81,7 +88,13 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
   }
 }
 
-function hexToBytes(hex: string): Uint8Array {
+export function hexToBytes(hex: string): Uint8Array {
+  if (hex.length === 0 || hex.length % 2 !== 0) {
+    throw new TypeError(`Hex string must have even length (got ${hex.length})`)
+  }
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new TypeError('String contains non-hex characters')
+  }
   const bytes = new Uint8Array(hex.length / 2)
   for (let i = 0; i < hex.length; i += 2) {
     bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
