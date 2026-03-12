@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
 
 export interface RedeemCashuDeps {
-  fetchFn: typeof fetch
+  fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
   storeCredential: (origin: string, macaroon: string, preimage: string, paymentHash: string) => void
   removeToken: (tokenStr: string) => void
 }

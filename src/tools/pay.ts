@@ -3,13 +3,14 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { ChallengeCache } from '../l402/challenge-cache.js'
 import type { WalletMethod, WalletProvider } from '../wallet/types.js'
 import { pollForSettlement } from '../wallet/human.js'
+import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
 
 export interface PayDeps {
   cache: ChallengeCache
   resolveWallet: (method?: WalletMethod) => WalletProvider | undefined
   storeCredential: (origin: string, macaroon: string, preimage: string, paymentHash: string, server: 'toll-booth' | null) => void
   maxAutoPaySats: number
-  fetchFn: typeof fetch
+  fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
   humanPayPollS: number
   humanPayTimeoutS: number
 }

@@ -2,9 +2,10 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { WalletMethod } from '../wallet/types.js'
 import type { DecodedInvoice } from '../l402/bolt11.js'
+import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
 
 export interface BuyCreditsDeps {
-  fetchFn: typeof fetch
+  fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
   payInvoice: (invoice: string, method?: WalletMethod) => Promise<{ paid: boolean; preimage?: string; method: string }>
   storeCredential: (origin: string, macaroon: string, preimage: string, paymentHash: string) => void
   decodeBolt11: (invoice: string) => DecodedInvoice

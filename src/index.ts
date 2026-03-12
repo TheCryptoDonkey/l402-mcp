@@ -22,11 +22,18 @@ import { registerCredentialsTool } from './tools/credentials.js'
 import { registerBalanceTool } from './tools/balance.js'
 import { registerBuyCreditsTool } from './tools/buy-credits.js'
 import { registerRedeemCashuTool } from './tools/redeem-cashu.js'
+import { createResilientFetch } from './fetch/resilient-fetch.js'
 
 const require = createRequire(import.meta.url)
 const { version } = require('../package.json') as { version: string }
 
 const config = loadConfig()
+
+const resilientFetch = createResilientFetch(fetch, {
+  timeoutMs: config.fetchTimeoutMs,
+  retries: config.fetchMaxRetries,
+  ssrfAllowPrivate: config.ssrfAllowPrivate,
+})
 
 // Shared state
 const credentialStore = new CredentialStore(config.credentialStorePath)
@@ -98,14 +105,14 @@ registerConfigTool(server, () => ({
 }))
 
 registerDiscoverTool(server, {
-  fetchFn: fetch,
+  fetchFn: resilientFetch,
   cache: challengeCache,
   decodeBolt11,
 })
 
 registerFetchTool(server, {
   credentialStore,
-  fetchFn: fetch,
+  fetchFn: resilientFetch,
   payInvoice,
   maxAutoPaySats: config.maxAutoPaySats,
   parseL402: parseL402Challenge,
@@ -118,7 +125,7 @@ registerPayTool(server, {
   resolveWallet: getWallet,
   storeCredential,
   maxAutoPaySats: config.maxAutoPaySats,
-  fetchFn: fetch,
+  fetchFn: resilientFetch,
   humanPayPollS: config.humanPayPollS,
   humanPayTimeoutS: config.humanPayTimeoutS,
 })
@@ -127,7 +134,7 @@ registerCredentialsTool(server, credentialStore)
 registerBalanceTool(server, credentialStore)
 
 registerBuyCreditsTool(server, {
-  fetchFn: fetch,
+  fetchFn: resilientFetch,
   payInvoice,
   storeCredential: (origin, macaroon, preimage, paymentHash) =>
     storeCredential(origin, macaroon, preimage, paymentHash, 'toll-booth'),
@@ -135,7 +142,7 @@ registerBuyCreditsTool(server, {
 })
 
 registerRedeemCashuTool(server, {
-  fetchFn: fetch,
+  fetchFn: resilientFetch,
   storeCredential: (origin, macaroon, preimage, paymentHash) =>
     storeCredential(origin, macaroon, preimage, paymentHash, 'toll-booth'),
   removeToken: (tokenStr) => cashuTokenStore?.remove(tokenStr),

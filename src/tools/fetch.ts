@@ -4,10 +4,11 @@ import type { CredentialStore } from '../store/credentials.js'
 import type { L402Challenge } from '../l402/parse.js'
 import type { DecodedInvoice } from '../l402/bolt11.js'
 import type { ServerInfo } from '../l402/detect.js'
+import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
 
 export interface FetchDeps {
   credentialStore: CredentialStore
-  fetchFn: typeof fetch
+  fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
   payInvoice: (invoice: string) => Promise<{ paid: boolean; preimage?: string; method: string }>
   maxAutoPaySats: number
   parseL402: (header: string) => L402Challenge | null

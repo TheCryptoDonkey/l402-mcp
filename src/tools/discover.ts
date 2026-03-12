@@ -4,9 +4,10 @@ import { parseL402Challenge } from '../l402/parse.js'
 import { detectServer } from '../l402/detect.js'
 import type { ChallengeCache } from '../l402/challenge-cache.js'
 import type { DecodedInvoice } from '../l402/bolt11.js'
+import type { ResilientFetchOptions } from '../fetch/resilient-fetch.js'
 
 export interface DiscoverDeps {
-  fetchFn: typeof fetch
+  fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
   cache: ChallengeCache
   decodeBolt11: (invoice: string) => DecodedInvoice
 }
