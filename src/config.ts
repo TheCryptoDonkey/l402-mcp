@@ -78,16 +78,18 @@ export function loadConfig(): L402Config {
   assertPositiveInt('HUMAN_PAY_POLL_S', config.humanPayPollS)
 
   // Validate credential store path stays within home directory
+  // Use home + sep to prevent /home/user matching /home/username-evil
   const home = homedir()
+  const homePrefix = home.endsWith('/') ? home : home + '/'
   const resolvedStorePath = resolve(config.credentialStorePath)
-  if (!resolvedStorePath.startsWith(home)) {
+  if (!resolvedStorePath.startsWith(homePrefix) && resolvedStorePath !== home) {
     throw new Error(`CREDENTIAL_STORE must be within the home directory (got: ${config.credentialStorePath})`)
   }
 
   // Validate Cashu tokens path too — same constraint
   if (config.cashuTokensPath) {
     const resolvedCashuPath = resolve(config.cashuTokensPath)
-    if (!resolvedCashuPath.startsWith(home)) {
+    if (!resolvedCashuPath.startsWith(homePrefix) && resolvedCashuPath !== home) {
       throw new Error(`CASHU_TOKENS must be within the home directory (got: ${config.cashuTokensPath})`)
     }
   }
