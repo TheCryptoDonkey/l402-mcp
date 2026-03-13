@@ -3,6 +3,7 @@
 [![MIT licence](https://img.shields.io/badge/licence-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-%3E%3D18-green)](https://nodejs.org/)
+[![Nostr](https://img.shields.io/badge/Nostr-Zap%20me-purple)](https://primal.net/p/npub1mgvlrnf5hm9yf0n5mf9nqmvarhvxkc6remu5ec3vf8r0txqkuk7su0e7q2)
 
 L402 client MCP that gives AI agents economic agency. Discover, pay for, and consume any L402-gated API - no human registration, no API keys, no middlemen.
 
@@ -104,8 +105,15 @@ Agent: "I need routing data from routing.trotters.cc"
 | Project | Role |
 |---------|------|
 | [toll-booth](https://github.com/TheCryptoDonkey/toll-booth) | Payment-rail agnostic HTTP 402 middleware |
-| [token-toll](https://github.com/TheCryptoDonkey/token-toll) | Pay-per-token AI inference proxy (built on toll-booth) |
+| [satgate](https://github.com/TheCryptoDonkey/satgate) | Pay-per-token AI inference proxy (built on toll-booth) |
 | **[l402-mcp](https://github.com/TheCryptoDonkey/l402-mcp)** | **MCP client — AI agents discover, pay, and consume L402 APIs** |
+
+---
+
+Built by [@TheCryptoDonkey](https://github.com/TheCryptoDonkey).
+
+- Lightning tips: `thedonkey@strike.me`
+- Nostr: `npub1mgvlrnf5hm9yf0n5mf9nqmvarhvxkc6remu5ec3vf8r0txqkuk7su0e7q2`
 
 ---
 

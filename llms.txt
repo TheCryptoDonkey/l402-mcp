@@ -43,7 +43,7 @@ Add to your MCP configuration:
 |----------|---------|-------------|
 | `NWC_URI` | — | Nostr Wallet Connect URI for autonomous Lightning payments |
 | `CASHU_TOKENS` | — | Path to Cashu token store file |
-| `MAX_AUTO_PAY_SATS` | 100 | Safety cap; payments above this require human confirmation |
+| `MAX_AUTO_PAY_SATS` | 1000 | Safety cap; payments above this require human confirmation |
 | `CREDENTIAL_STORE` | `~/.l402-mcp/credentials.json` | Persistent macaroon/credential storage |
 | `TRANSPORT` | `stdio` | Transport mode: `stdio` or `http` |
 | `PORT` | 3402 | HTTP server port (when `TRANSPORT=http`) |
@@ -120,6 +120,6 @@ The human stays in control of three things: the safety cap, which payment method
 
 https://github.com/TheCryptoDonkey/toll-booth
 
-**token-toll** demonstrates the AI inference use case: a proxy that gates access to AI model endpoints (Claude, GPT-4, etc.) behind L402 payments. Agents use l402-mcp to discover pricing, pay per-request or buy credit tiers, and consume inference capacity without pre-provisioned API keys.
+**satgate** demonstrates the AI inference use case: a proxy that gates access to AI model endpoints (Ollama, vLLM, llama.cpp) behind L402 payments. Agents use l402-mcp to discover pricing, pay per-request or buy credit tiers, and consume inference capacity without pre-provisioned API keys.
 
-https://github.com/TheCryptoDonkey/token-toll
+https://github.com/TheCryptoDonkey/satgate
