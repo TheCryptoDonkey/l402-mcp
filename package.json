@@ -8,7 +8,12 @@
   },
   "main": "./build/index.js",
   "exports": {
-    ".": "./build/index.js"
+    ".": "./build/index.js",
+    "./tools/*": "./build/tools/*.js",
+    "./l402/*": "./build/l402/*.js",
+    "./store/*": "./build/store/*.js",
+    "./fetch/*": "./build/fetch/*.js",
+    "./spend-tracker": "./build/spend-tracker.js"
   },
   "scripts": {
     "build": "tsc",
