@@ -15,8 +15,6 @@ export interface ResilientFetchConfig {
   backoffMs?: number
   maxResponseBytes?: number
   ssrfAllowPrivate?: boolean
-  /** Force IP pinning for HTTPS too (needed when TLS cert validation is disabled). */
-  forcePinHttps?: boolean
 }
 
 const MAX_REDIRECTS = 5
@@ -59,14 +57,11 @@ function sleep(ms: number): Promise<void> {
 function pinUrlToResolvedIp(
   url: string,
   resolved: ResolvedAddress | undefined,
-  forcePinHttps = false,
 ): { pinnedUrl: string; hostHeader: string | undefined } {
   if (!resolved) return { pinnedUrl: url, hostHeader: undefined }
 
   const parsed = new URL(url)
-  if (parsed.protocol !== 'http:' && !(parsed.protocol === 'https:' && forcePinHttps)) {
-    return { pinnedUrl: url, hostHeader: undefined }
-  }
+  if (parsed.protocol !== 'http:') return { pinnedUrl: url, hostHeader: undefined }
 
   const originalHost = parsed.host // includes port if present
   const { address, family } = resolved
@@ -92,7 +87,6 @@ export function createResilientFetch(
   const globalBackoff = config.backoffMs ?? DEFAULT_BACKOFF_MS
   const globalMaxResponseBytes = config.maxResponseBytes ?? 0
   const allowPrivate = config.ssrfAllowPrivate ?? false
-  const forcePinHttps = config.forcePinHttps ?? false
 
   return async function resilientFetch(
     url: string | URL,
@@ -121,7 +115,7 @@ export function createResilientFetch(
 
       try {
         let response = await fetchWithTimeoutAndRedirects(
-          fetchFn, urlStr, init, timeoutMs, allowPrivate, urlStr, resolved, forcePinHttps,
+          fetchFn, urlStr, init, timeoutMs, allowPrivate, urlStr, resolved,
         )
 
         // If retryable status and we have retries left, drain body and continue
@@ -189,7 +183,6 @@ async function fetchWithTimeoutAndRedirects(
   allowPrivate: boolean,
   originalUrl: string,
   resolved?: ResolvedAddress,
-  forcePinHttps = false,
 ): Promise<Response> {
   let currentUrl = url
   let currentInit = init ? { ...init } : {}
@@ -198,7 +191,7 @@ async function fetchWithTimeoutAndRedirects(
 
   while (true) {
     // Pin HTTP URLs to the validated IP to prevent DNS rebinding
-    const { pinnedUrl, hostHeader } = pinUrlToResolvedIp(currentUrl, currentResolved, forcePinHttps)
+    const { pinnedUrl, hostHeader } = pinUrlToResolvedIp(currentUrl, currentResolved)
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs)

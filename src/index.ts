@@ -37,9 +37,6 @@ const resilientFetch = createResilientFetch(fetch, {
   retries: config.fetchMaxRetries,
   maxResponseBytes: config.fetchMaxResponseBytes,
   ssrfAllowPrivate: config.ssrfAllowPrivate,
-  // When TLS cert validation is disabled, HTTPS is no longer resistant to DNS
-  // rebinding — force IP pinning for HTTPS too in this degraded mode.
-  forcePinHttps: process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0',
 })
 
 // Shared state
