@@ -9,6 +9,15 @@ import type { SpendTracker } from '../spend-tracker.js'
 import { safeErrorMessage } from './safe-error.js'
 import { filterResponseHeaders } from './safe-headers.js'
 
+const HEX_RE = /^[0-9a-fA-F]+$/
+const MACAROON_RE = /^[A-Za-z0-9+/_\-=]+$/
+
+/** Headers that must not be set by the caller (hop-by-hop or security-sensitive). */
+const BLOCKED_HEADERS = new Set([
+  'host', 'transfer-encoding', 'connection', 'upgrade',
+  'proxy-authorization', 'te', 'trailer', 'authorization',
+])
+
 export interface FetchDeps {
   credentialStore: CredentialStore
   fetchFn: (url: string | URL, init?: RequestInit, options?: ResilientFetchOptions) => Promise<Response>
@@ -33,7 +42,15 @@ export async function handleFetch(
 ) {
   const origin = new URL(args.url).origin
   const cred = deps.credentialStore.get(origin)
-  const reqHeaders: Record<string, string> = { ...args.headers }
+  const reqHeaders: Record<string, string> = {}
+  // Copy user headers, stripping dangerous hop-by-hop/security-sensitive ones
+  if (args.headers) {
+    for (const [k, v] of Object.entries(args.headers)) {
+      if (!BLOCKED_HEADERS.has(k.toLowerCase())) {
+        reqHeaders[k] = v
+      }
+    }
+  }
 
   // Step 1-2: Use stored credentials if available
   if (cred) {
@@ -96,7 +113,24 @@ export async function handleFetch(
     if (!creditsExhausted && autoPay && challenge && decoded.costSats !== null && decoded.costSats <= deps.maxAutoPaySats && withinSpendLimit) {
       const payResult = await deps.payInvoice(challenge.invoice)
 
+      // Roll back spend-limit reservation if payment failed
+      if (!payResult.paid || !payResult.preimage) {
+        deps.spendTracker.unrecord(decoded.costSats!)
+      }
+
       if (payResult.paid && payResult.preimage) {
+        // Validate preimage (hex) and macaroon (base64-safe) before storage
+        // to prevent header injection via Authorization: L402 {macaroon}:{preimage}
+        if (!HEX_RE.test(payResult.preimage) || !MACAROON_RE.test(challenge.macaroon)) {
+          deps.spendTracker.unrecord(decoded.costSats!)
+          return {
+            content: [{
+              type: 'text' as const,
+              text: JSON.stringify({ error: 'Payment succeeded but credential contains invalid characters — refusing to store' }),
+            }],
+            isError: true as const,
+          }
+        }
 
         // Store credential and retry
         deps.credentialStore.set(origin, {

@@ -40,4 +40,19 @@ export class SpendTracker {
     this.record(sats)
     return true
   }
+
+  /**
+   * Roll back a previously recorded spend (e.g. when payment fails after
+   * tryRecord succeeded). Removes the most recent matching entry so that
+   * failed payments do not consume spend-limit headroom.
+   */
+  unrecord(sats: number): void {
+    if (sats <= 0) return
+    for (let i = this.entries.length - 1; i >= 0; i--) {
+      if (this.entries[i].sats === sats) {
+        this.entries.splice(i, 1)
+        return
+      }
+    }
+  }
 }

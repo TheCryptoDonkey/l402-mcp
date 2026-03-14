@@ -37,6 +37,9 @@ const resilientFetch = createResilientFetch(fetch, {
   retries: config.fetchMaxRetries,
   maxResponseBytes: config.fetchMaxResponseBytes,
   ssrfAllowPrivate: config.ssrfAllowPrivate,
+  // When TLS cert validation is disabled, HTTPS is no longer resistant to DNS
+  // rebinding — force IP pinning for HTTPS too in this degraded mode.
+  forcePinHttps: process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0',
 })
 
 // Shared state
@@ -88,19 +91,24 @@ async function payInvoice(invoice: string, method?: WalletMethod): Promise<{ pai
   return { paid: result.paid, preimage: result.preimage, method: result.method }
 }
 
-// Helper: store credential — validates preimage to prevent credential poisoning
+// Helper: store credential — validates preimage and macaroon to prevent credential poisoning
 const HEX_RE = /^[0-9a-fA-F]+$/
-function storeCredential(origin: string, macaroon: string, preimage: string, paymentHash: string, server: 'toll-booth' | null = null): void {
+const MACAROON_RE = /^[A-Za-z0-9+/_\-=]+$/
+function storeCredential(origin: string, macaroon: string, preimage: string, paymentHash: string, server: 'toll-booth' | null = null): boolean {
+  const safeOrigin = (() => { try { return new URL(origin).hostname } catch { return '(invalid)' } })()
   if (!preimage || typeof preimage !== 'string' || preimage.length === 0) {
-    try { origin = new URL(origin).hostname } catch { origin = '(invalid)' }
-    console.error(`[402-mcp] Refusing to store credential for ${origin}: missing or empty preimage`)
-    return
+    console.error(`[402-mcp] Refusing to store credential for ${safeOrigin}: missing or empty preimage`)
+    return false
   }
   // Preimage is sent in Authorization headers — must be valid hex to prevent injection
   if (!HEX_RE.test(preimage)) {
-    try { origin = new URL(origin).hostname } catch { origin = '(invalid)' }
-    console.error(`[402-mcp] Refusing to store credential for ${origin}: preimage contains non-hex characters`)
-    return
+    console.error(`[402-mcp] Refusing to store credential for ${safeOrigin}: preimage contains non-hex characters`)
+    return false
+  }
+  // Macaroon is also sent in Authorization headers — restrict to base64-safe characters
+  if (!macaroon || !MACAROON_RE.test(macaroon)) {
+    console.error(`[402-mcp] Refusing to store credential for ${safeOrigin}: macaroon contains invalid characters`)
+    return false
   }
   credentialStore.set(origin, {
     macaroon,
@@ -111,6 +119,7 @@ function storeCredential(origin: string, macaroon: string, preimage: string, pay
     lastUsed: new Date().toISOString(),
     server,
   })
+  return true
 }
 
 // Create MCP server
@@ -201,6 +210,7 @@ if (config.transport === 'http') {
   // Simple sliding-window rate limiter (100 requests per 60s per IP)
   const RATE_WINDOW_MS = 60_000
   const RATE_MAX = 100
+  const RATE_MAX_BUCKETS = 10_000
   const rateBuckets = new Map<string, number[]>()
 
   app.use((req, res, next) => {
@@ -209,6 +219,11 @@ if (config.transport === 'http') {
     const cutoff = now - RATE_WINDOW_MS
     const timestamps = (rateBuckets.get(ip) ?? []).filter(t => t > cutoff)
     if (timestamps.length >= RATE_MAX) {
+      res.status(429).json({ error: 'Too many requests' })
+      return
+    }
+    // Cap total tracked IPs to prevent memory exhaustion from IP cycling
+    if (!rateBuckets.has(ip) && rateBuckets.size >= RATE_MAX_BUCKETS) {
       res.status(429).json({ error: 'Too many requests' })
       return
     }
