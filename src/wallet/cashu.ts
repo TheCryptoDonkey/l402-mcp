@@ -147,6 +147,7 @@ function restoreChangeProofs(
     })
   } catch (err) {
     // Payment already succeeded; log but don't fail
-    console.warn('[402-mcp] Failed to restore change proofs to token store:', err)
+    // Log generic message only — err may contain proof secrets
+    console.warn('[402-mcp] Failed to restore change proofs to token store')
   }
 }

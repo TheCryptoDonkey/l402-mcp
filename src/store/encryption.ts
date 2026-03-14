@@ -72,10 +72,10 @@ function loadOrCreateFallbackKey(): Buffer {
 
   // File already exists — read and validate
   const hex = readFileSync(FALLBACK_KEY_PATH, 'utf8').trim()
-  const key = Buffer.from(hex, 'hex')
-  if (key.length !== 32) {
-    throw new Error(`Encryption key file is corrupted (expected 32 bytes, got ${key.length}). Remove ${FALLBACK_KEY_PATH} to regenerate (existing credentials will be lost).`)
+  if (!/^[0-9a-f]{64}$/.test(hex)) {
+    throw new Error(`Encryption key file is corrupted (expected 64 hex chars). Remove ${FALLBACK_KEY_PATH} to regenerate (existing credentials will be lost).`)
   }
+  const key = Buffer.from(hex, 'hex')
   return key
 }
 

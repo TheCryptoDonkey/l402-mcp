@@ -73,7 +73,8 @@ export class CashuTokenStore {
   private save(): void {
     const dir = dirname(this.path)
     if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true })
+      mkdirSync(dir, { recursive: true, mode: 0o700 })
+      try { chmodSync(dir, 0o700) } catch { /* Windows safety net */ }
     }
     const json = JSON.stringify(this.data, null, 2)
     const content = this.key
