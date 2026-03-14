@@ -8,8 +8,14 @@ import type { SearchDeps } from './search.js'
  */
 const MAX_EVENTS = 1000
 
+/** Optional tag filters to pass to relays, reducing bandwidth by filtering server-side. */
+export interface SubscribeFilters {
+  '#t'?: string[]
+  '#pmi'?: string[]
+}
+
 export function createNostrSubscriber(): SearchDeps['subscribeEvents'] {
-  return async (relays: string[], kinds: number[], timeout: number): Promise<NostrEvent[]> => {
+  return async (relays: string[], kinds: number[], timeout: number, filters?: SubscribeFilters): Promise<NostrEvent[]> => {
     const { Relay } = await import('nostr-tools/relay')
     const { verifyEvent } = await import('nostr-tools/pure')
     const events: NostrEvent[] = []
@@ -31,8 +37,12 @@ export function createNostrSubscriber(): SearchDeps['subscribeEvents'] {
           connections.push(relay)
 
           return new Promise<void>((resolve) => {
+            const filter: Record<string, unknown> = { kinds }
+            if (filters?.['#t']?.length) filter['#t'] = filters['#t']
+            if (filters?.['#pmi']?.length) filter['#pmi'] = filters['#pmi']
+
             const sub = relay.subscribe(
-              [{ kinds }],
+              [filter as Parameters<typeof relay.subscribe>[0][0]],
               {
                 onevent: (event) => {
                   if (events.length < MAX_EVENTS && verifyEvent(event)) {

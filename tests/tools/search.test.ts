@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { parseAnnounceEvent, handleSearch, type SearchDeps } from '../../src/tools/search.js'
 import type { NostrEvent } from 'nostr-tools/core'
+import type { SubscribeFilters } from '../../src/tools/nostr-subscribe.js'
 
 function makeEvent(overrides: Partial<NostrEvent> & { tags?: string[][] } = {}): NostrEvent {
   return {
@@ -29,7 +30,7 @@ function makeEvent(overrides: Partial<NostrEvent> & { tags?: string[][] } = {}):
 
 function mockDeps(events: NostrEvent[]): SearchDeps {
   return {
-    subscribeEvents: async () => events,
+    subscribeEvents: async (_relays, _kinds, _timeout, _filters?: SubscribeFilters) => events,
   }
 }
 
@@ -94,7 +95,7 @@ describe('handleSearch', () => {
     expect(parsed[0].paymentMethods).toEqual(['bitcoin-lightning-bolt11', 'bitcoin-cashu'])
   })
 
-  it('filters by payment method', async () => {
+  it('passes payment method filter to subscribeEvents and returns relay-filtered results', async () => {
     const bolt11Event = makeEvent({
       id: 'evt-bolt11',
       tags: [
@@ -116,19 +117,32 @@ describe('handleSearch', () => {
         ['t', 'ai'],
       ],
     })
-    const events = [bolt11Event, cashuEvent]
+    const allEvents = [bolt11Event, cashuEvent]
+    let capturedFilters: SubscribeFilters | undefined
+
+    // Simulate relay-side filtering: relay returns only events matching the pmi filter
+    const deps: SearchDeps = {
+      subscribeEvents: async (_relays, _kinds, _timeout, filters?: SubscribeFilters) => {
+        capturedFilters = filters
+        return allEvents.filter(e =>
+          !filters?.['#pmi']?.length ||
+          e.tags.some(t => t[0] === 'pmi' && filters['#pmi']!.includes(t[1]))
+        )
+      },
+    }
 
     const result = await handleSearch(
       { query: 'ai', paymentMethod: 'bitcoin-cashu' },
-      mockDeps(events),
+      deps,
     )
     const parsed = JSON.parse(result.content[0].text)
 
+    expect(capturedFilters).toEqual({ '#pmi': ['bitcoin-cashu'] })
     expect(parsed).toHaveLength(1)
     expect(parsed[0].name).toBe('Cashu Service')
   })
 
-  it('filters by topic tags', async () => {
+  it('passes topic filter to subscribeEvents and returns relay-filtered results', async () => {
     const aiEvent = makeEvent({
       id: 'evt-ai',
       tags: [
@@ -152,14 +166,27 @@ describe('handleSearch', () => {
         ['t', 'data'],
       ],
     })
-    const events = [aiEvent, weatherEvent]
+    const allEvents = [aiEvent, weatherEvent]
+    let capturedFilters: SubscribeFilters | undefined
+
+    // Simulate relay-side filtering: relay returns only events matching the topic filter
+    const deps: SearchDeps = {
+      subscribeEvents: async (_relays, _kinds, _timeout, filters?: SubscribeFilters) => {
+        capturedFilters = filters
+        return allEvents.filter(e =>
+          !filters?.['#t']?.length ||
+          e.tags.some(t => t[0] === 't' && filters['#t']!.includes(t[1]))
+        )
+      },
+    }
 
     const result = await handleSearch(
       { query: '', topics: ['weather'] },
-      mockDeps(events),
+      deps,
     )
     const parsed = JSON.parse(result.content[0].text)
 
+    expect(capturedFilters).toEqual({ '#t': ['weather'] })
     expect(parsed).toHaveLength(1)
     expect(parsed[0].name).toBe('Weather Service')
   })
@@ -206,7 +233,7 @@ describe('handleSearch', () => {
     let capturedTimeout = 0
 
     const deps: SearchDeps = {
-      subscribeEvents: async (relays, _kinds, timeout) => {
+      subscribeEvents: async (relays, _kinds, timeout, _filters?: SubscribeFilters) => {
         capturedRelays = relays
         capturedTimeout = timeout
         return []
@@ -227,7 +254,7 @@ describe('handleSearch', () => {
     let capturedTimeout = 0
 
     const deps: SearchDeps = {
-      subscribeEvents: async (relays, _kinds, timeout) => {
+      subscribeEvents: async (relays, _kinds, timeout, _filters?: SubscribeFilters) => {
         capturedRelays = relays
         capturedTimeout = timeout
         return []

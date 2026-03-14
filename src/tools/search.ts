@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { NostrEvent } from 'nostr-tools/core'
+import type { SubscribeFilters } from './nostr-subscribe.js'
 
 const DEFAULT_RELAYS = [
   'wss://relay.damus.io',
@@ -11,7 +12,7 @@ const DEFAULT_RELAYS = [
 const KIND_L402_ANNOUNCE = 31402
 
 export interface SearchDeps {
-  subscribeEvents: (relays: string[], kinds: number[], timeout: number) => Promise<NostrEvent[]>
+  subscribeEvents: (relays: string[], kinds: number[], timeout: number, filters?: SubscribeFilters) => Promise<NostrEvent[]>
 }
 
 export interface ParsedService {
@@ -83,11 +84,16 @@ export async function handleSearch(
   const maxResults = args.maxResults ?? 20
   const queryLower = args.query.toLowerCase()
 
-  const events = await deps.subscribeEvents(relays, [KIND_L402_ANNOUNCE], timeout)
+  // Build relay-side tag filters — relays handle topic and payment method filtering
+  const relayFilters: SubscribeFilters = {}
+  if (args.topics?.length) relayFilters['#t'] = args.topics
+  if (args.paymentMethod) relayFilters['#pmi'] = [args.paymentMethod]
+
+  const events = await deps.subscribeEvents(relays, [KIND_L402_ANNOUNCE], timeout, relayFilters)
 
   let services = events.map(parseAnnounceEvent)
 
-  // Filter by query text — match against name, about, and capability descriptions
+  // Filter by query text — relays cannot do substring search so this remains client-side
   if (queryLower) {
     services = services.filter(svc => {
       const searchable = [
@@ -99,21 +105,6 @@ export async function handleSearch(
 
       return searchable.includes(queryLower)
     })
-  }
-
-  // Filter by payment method
-  if (args.paymentMethod) {
-    services = services.filter(svc =>
-      svc.paymentMethods.includes(args.paymentMethod!),
-    )
-  }
-
-  // Filter by topics — service must have at least one matching topic
-  if (args.topics && args.topics.length > 0) {
-    const topicSet = new Set(args.topics.map(t => t.toLowerCase()))
-    services = services.filter(svc =>
-      svc.topics.some(t => topicSet.has(t.toLowerCase())),
-    )
   }
 
   // Limit results
