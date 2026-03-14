@@ -1,0 +1,399 @@
+# 402-mcp — Full Technical Reference
+
+> For a concise overview, see [llms.txt](llms.txt). This document provides the complete technical reference for integrating with, building on, or contributing to 402-mcp.
+
+## What is 402-mcp?
+
+402-mcp is an MCP (Model Context Protocol) server that gives AI agents economic agency — the ability to discover, pay for, and consume any L402 or x402 payment-gated API without human registration, API keys, or middlemen.
+
+It implements the client side of the L402 protocol: when an API responds with HTTP 402 (Payment Required), 402-mcp automatically parses the challenge, pays the Lightning invoice, stores the credential, and retries the request — all within a single tool call from the agent's perspective.
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  AI Agent (Claude, Cursor, GPT, custom)                     │
+│  Communicates via MCP protocol (stdio or HTTP transport)     │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ MCP tool calls
+┌──────────────────────▼──────────────────────────────────────┐
+│  402-mcp MCP Server                                          │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌─────────────┐               │
+│  │ Tools    │  │ Wallets  │  │ Stores      │               │
+│  │          │  │          │  │             │               │
+│  │ config   │  │ NWC      │  │ Credentials │               │
+│  │ discover │  │ Cashu    │  │ (AES-256)   │               │
+│  │ fetch    │  │ Human    │  │             │               │
+│  │ pay      │  │          │  │ Cashu       │               │
+│  │ creds    │  │          │  │ Tokens      │               │
+│  │ balance  │  │          │  │             │               │
+│  │ search   │  │          │  │             │               │
+│  │ buy_cred │  │          │  │             │               │
+│  │ redeem   │  │          │  │             │               │
+│  └──────────┘  └──────────┘  └─────────────┘               │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐     │
+│  │ L402 Protocol│  │ Resilient    │  │ Spend         │     │
+│  │ parse, detect│  │ Fetch        │  │ Tracker       │     │
+│  │ cache, bolt11│  │ SSRF, retry  │  │ atomic caps   │     │
+│  └──────────────┘  └──────────────┘  └───────────────┘     │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTP + L402 / Nostr
+         ┌─────────────┼─────────────┐
+         ▼             ▼             ▼
+    ┌─────────┐  ┌──────────┐  ┌──────────┐
+    │toll-booth│  │ Aperture │  │  Nostr   │
+    │ server  │  │  server  │  │  Relays  │
+    └─────────┘  └──────────┘  └──────────┘
+```
+
+## Source Structure
+
+```
+src/
+  index.ts                 # Entry point: config, wiring, transport setup
+  config.ts                # Environment variable parsing with validation
+  spend-tracker.ts         # Atomic rolling-window spend limiter
+  tools/
+    config.ts              # l402_config — introspect capabilities
+    discover.ts            # l402_discover — probe pricing without paying
+    fetch.ts               # l402_fetch — full L402 payment flow
+    pay.ts                 # l402_pay — explicit invoice payment
+    credentials.ts         # l402_credentials — list stored credentials
+    balance.ts             # l402_balance — check cached credit balance
+    search.ts              # l402_search — discover services on Nostr
+    buy-credits.ts         # l402_buy_credits — toll-booth credit tiers
+    redeem-cashu.ts        # l402_redeem_cashu — direct ecash redemption
+    nostr-subscribe.ts     # Nostr relay subscription for search
+    safe-error.ts          # Error sanitisation (strips internal details)
+    safe-headers.ts        # Header sanitisation (strips auth tokens)
+  wallet/
+    types.ts               # WalletProvider interface
+    resolve.ts             # Priority-ordered wallet resolution
+    nwc.ts                 # NWC (Nostr Wallet Connect) implementation
+    cashu.ts               # Cashu ecash melt implementation
+    human.ts               # Human-in-the-loop (QR code + polling)
+  l402/
+    parse.ts               # Parse WWW-Authenticate L402 challenges
+    detect.ts              # Detect toll-booth vs generic L402 servers
+    bolt11.ts              # Decode BOLT11 invoices (amount extraction)
+    challenge-cache.ts     # Cache parsed challenges for l402_pay
+  store/
+    credentials.ts         # Encrypted credential persistence (JSON)
+    cashu-tokens.ts        # Cashu token store (add/remove/balance)
+    encryption.ts          # AES-256-GCM encryption (keychain or file key)
+  fetch/
+    resilient-fetch.ts     # Timeout, retry, response size limits
+    ssrf-guard.ts          # Block requests to private/internal IPs
+    errors.ts              # Fetch error types
+tests/                     # Mirrors src/ structure
+  e2e/                     # Integration tests against in-process toll-booth
+```
+
+## Complete Tool Reference
+
+### l402_config
+
+**Purpose:** Introspect the agent's payment capabilities and current configuration.
+
+**Parameters:** None.
+
+**Returns:**
+- `nwcConfigured` (boolean) — whether an NWC wallet URI is set
+- `cashuConfigured` (boolean) — whether Cashu tokens are loaded with balance > 0
+- `cashuBalanceSats` (number) — total Cashu token balance in satoshis
+- `maxAutoPaySats` (number) — per-payment safety cap
+- `credentialCount` (number) — number of stored L402 credentials
+
+**When to use:** Call first in any session to understand what the agent can do autonomously.
+
+---
+
+### l402_discover
+
+**Purpose:** Probe an endpoint to discover pricing without paying.
+
+**Parameters:**
+- `url` (string, required) — the endpoint to probe
+- `method` (string, optional) — HTTP method (default: GET)
+- `headers` (object, optional) — additional headers
+
+**Returns:**
+- `amountSats` (number) — price in satoshis
+- `server` (string) — detected server type ("toll-booth" or null)
+- `hasTiers` (boolean) — whether credit tiers are available
+- `challenge` — cached for subsequent `l402_pay`
+
+**When to use:** Before committing to a purchase, so the agent can reason about value.
+
+---
+
+### l402_fetch
+
+**Purpose:** Make an HTTP request with automatic L402 payment handling.
+
+**Parameters:**
+- `url` (string, required) — the endpoint to fetch
+- `method` (string, optional) — HTTP method (default: GET)
+- `headers` (object, optional) — additional headers
+- `body` (string, optional) — request body
+- `paymentMethod` (string, optional) — force a specific payment rail
+
+**Behaviour:**
+1. Checks for existing credential for the origin
+2. Makes the HTTP request (with credential if available)
+3. If 402 received: parses challenge, checks amount against `MAX_AUTO_PAY_SATS` and rolling spend cap
+4. If within budget: pays invoice, stores credential, retries request
+5. If over budget: returns the price and asks for human approval
+6. Returns response body, status, headers, and remaining credit balance
+
+**When to use:** Primary tool for consuming L402 APIs. Handles the entire flow.
+
+---
+
+### l402_pay
+
+**Purpose:** Pay a specific Lightning invoice.
+
+**Parameters:**
+- `invoice` (string, required) — BOLT11 invoice to pay
+- `paymentMethod` (string, optional) — force a specific payment rail
+- `challengeId` (string, optional) — ID from a previous `l402_discover` to associate the payment
+
+**Returns:**
+- `paid` (boolean)
+- `preimage` (string) — payment proof
+- `method` (string) — which wallet paid
+
+**When to use:** When you have an invoice from a non-L402 source, or want explicit control.
+
+---
+
+### l402_credentials
+
+**Purpose:** List all stored L402 credentials.
+
+**Parameters:** None.
+
+**Returns:** Array of credentials with:
+- `origin` — server origin
+- `creditBalance` — cached balance (if known)
+- `server` — detected server type
+- `storedAt` / `lastUsed` — timestamps
+
+**When to use:** Auditing spend, checking which servers have been paid.
+
+---
+
+### l402_balance
+
+**Purpose:** Check cached credit balance for a server.
+
+**Parameters:**
+- `url` (string, required) — server URL to check
+
+**Returns:**
+- `balance` (number | null) — credits remaining, or null if unknown
+
+**When to use:** Before calling `l402_fetch` to confirm sufficient balance.
+
+---
+
+### l402_search
+
+**Purpose:** Discover L402 services on Nostr relays.
+
+**Parameters:**
+- `query` (string, required) — search text to match against service names, descriptions, capabilities
+- `relays` (string[], optional) — Nostr relay URLs (defaults to damus, primal, nos.lol)
+- `topics` (string[], optional) — filter by topic tags (e.g. ["ai", "data"])
+- `paymentMethod` (string, optional) — filter by payment method (e.g. "bitcoin-lightning-bolt11")
+- `maxResults` (number, optional) — max results (default 20)
+- `timeout` (number, optional) — relay timeout in ms (default 5000)
+
+**Returns:** Array of services with:
+- `name`, `url`, `about` — service metadata
+- `pricing` — array of `{ capability, amount, unit }`
+- `paymentMethods` — supported payment methods
+- `topics` — topic tags
+- `capabilities` — array of `{ name, description }`
+
+**When to use:** When the agent needs a paid API but doesn't know the URL. Searches the decentralised Nostr network for kind 31402 service announcements.
+
+---
+
+### l402_buy_credits (toll-booth only)
+
+**Purpose:** Browse and purchase volume discount credit tiers.
+
+**Parameters:**
+- `url` (string, required) — toll-booth server URL
+- `amountSats` (number, optional) — specific tier to purchase
+- `paymentMethod` (string, optional) — force a specific payment rail
+
+**Behaviour:** Fetches available tiers, purchases the specified tier, stores the credential with the credit balance.
+
+**When to use:** When multiple requests are needed — buying a tier upfront is cheaper than paying per-request.
+
+---
+
+### l402_redeem_cashu (toll-booth only)
+
+**Purpose:** Redeem Cashu ecash tokens directly with the server.
+
+**Parameters:**
+- `url` (string, required) — toll-booth server URL
+- `token` (string, required) — Cashu token to redeem
+
+**Behaviour:** Sends the raw Cashu token to the toll-booth's redemption endpoint. The server credits the balance immediately without a Lightning round-trip.
+
+**When to use:** When both agent and server support Cashu — faster and cheaper than melting tokens to pay an invoice.
+
+## L402 Protocol Flow
+
+The L402 protocol is an extension of HTTP 402 (Payment Required):
+
+1. **Client** sends a request to a protected endpoint
+2. **Server** responds with `402 Payment Required` and headers:
+   - `WWW-Authenticate: L402 macaroon="<base64>", invoice="<bolt11>"`
+3. **Client** decodes the BOLT11 invoice, pays it via Lightning, receives a preimage
+4. **Client** retries the request with:
+   - `Authorization: L402 <base64-macaroon>:<hex-preimage>`
+5. **Server** validates the macaroon + preimage and returns the data
+
+402-mcp handles steps 2–5 automatically within `l402_fetch`.
+
+## Wallet Priority and Resolution
+
+Wallets are tried in order: NWC → Cashu → Human. The first wallet that succeeds is used.
+
+| Wallet | Autonomy | Requirements | Speed |
+|--------|----------|-------------|-------|
+| NWC | Fully autonomous | `NWC_URI` env var pointing to a Lightning wallet | ~2-5 seconds |
+| Cashu | Fully autonomous | `CASHU_TOKENS` file with ecash tokens | ~3-8 seconds |
+| Human | Requires human | None — always available as fallback | Minutes |
+
+The agent can force a specific method per-call using the `paymentMethod` parameter.
+
+## Safety and Spend Limits
+
+### Per-payment cap
+
+`MAX_AUTO_PAY_SATS` (default: 1000) caps any single payment. If an invoice exceeds this:
+- The agent is told the price and asked to seek human approval
+- The human wallet (QR code) is used for the actual payment
+- The credential is stored normally after payment
+
+### Rolling spend cap
+
+`MAX_SPEND_PER_MINUTE_SATS` (default: 10000) caps total spend in any 60-second window. This prevents:
+- Rapid successive small payments exceeding a total budget
+- Runaway loops where the agent keeps buying credits
+- Both caps use atomic `tryRecord()` to prevent TOCTOU race conditions
+
+### SSRF Protection
+
+All outbound HTTP requests pass through an SSRF guard:
+- Blocks requests to private IP ranges (10.x, 172.16-31.x, 192.168.x, 127.x, ::1)
+- Blocks requests to link-local, loopback, and metadata service IPs
+- `SSRF_ALLOW_PRIVATE=true` disables this for local development only
+
+### Credential Security
+
+- Credentials encrypted with AES-256-GCM
+- Encryption key stored in OS keychain (macOS Keychain, Windows Credential Vault, Linux Secret Service) when available
+- Falls back to file-based key at `~/.402-mcp/encryption.key` with a console warning
+- Preimages validated as hex before storage to prevent header injection
+- Credential store path must be within the home directory (path traversal protection)
+
+## Transport Modes
+
+### stdio (default)
+
+Standard MCP transport — used by Claude Desktop, Cursor, and most MCP clients. The server reads JSON-RPC from stdin and writes to stdout.
+
+```bash
+npx 402-mcp
+```
+
+### HTTP
+
+StreamableHTTP transport for network access. Useful for remote agents, multi-client setups, or deployment behind a reverse proxy.
+
+```bash
+TRANSPORT=http PORT=3402 npx 402-mcp
+```
+
+HTTP transport includes:
+- Rate limiting: 100 requests per 60 seconds per IP
+- Security headers: CSP, X-Frame-Options, X-Content-Type-Options, Cache-Control
+- Loopback-only binding by default (`BIND_ADDRESS=127.0.0.1`)
+- Health endpoint at `GET /health`
+- Graceful shutdown on SIGTERM/SIGINT
+
+## Configuration Reference
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NWC_URI` | — | Nostr Wallet Connect URI for autonomous Lightning payments. Cleared from env after reading. |
+| `CASHU_TOKENS` | — | Path to Cashu token store file. Must be within home directory. |
+| `MAX_AUTO_PAY_SATS` | 1000 | Per-payment safety cap (satoshis). 0 disables autonomous payments. |
+| `MAX_SPEND_PER_MINUTE_SATS` | 10000 | Rolling 60-second spend cap (satoshis). |
+| `CREDENTIAL_STORE` | `~/.402-mcp/credentials.json` | Path to encrypted credential store. Must be within home directory. |
+| `TRANSPORT` | `stdio` | Transport mode: `stdio` or `http`. |
+| `PORT` | 3402 | HTTP server port (when `TRANSPORT=http`). |
+| `BIND_ADDRESS` | `127.0.0.1` | HTTP bind address. Warning emitted for non-loopback addresses. |
+| `CORS_ORIGIN` | disabled | CORS origin for HTTP transport. |
+| `FETCH_TIMEOUT_MS` | 30000 | HTTP request timeout in milliseconds. |
+| `FETCH_MAX_RETRIES` | 2 | Maximum retry attempts for failed requests. Money-mutating POSTs use 0. |
+| `FETCH_MAX_RESPONSE_BYTES` | 10485760 | Maximum response body size (10 MB). |
+| `HUMAN_PAY_TIMEOUT_S` | 600 | Timeout for human payment (seconds). |
+| `HUMAN_PAY_POLL_S` | 3 | Initial polling interval for human payment (seconds). |
+| `SSRF_ALLOW_PRIVATE` | false | Allow requests to private IP ranges. Local development only. |
+| `NODE_TLS_REJECT_UNAUTHORIZED` | — | Warning emitted if set to "0" (disables TLS validation). |
+
+## Ecosystem
+
+| Project | Role | URL |
+|---------|------|-----|
+| **402-mcp** | MCP client — AI agents discover, pay, and consume L402 APIs | https://github.com/TheCryptoDonkey/402-mcp |
+| **toll-booth** | L402 payment middleware for any Node.js server | https://github.com/TheCryptoDonkey/toll-booth |
+| **satgate** | Pay-per-token AI inference proxy (built on toll-booth) | https://github.com/TheCryptoDonkey/satgate |
+| **402-announce** | Publish L402 services on Nostr for decentralised discovery | https://github.com/TheCryptoDonkey/402-announce |
+
+## Integration Patterns
+
+### Agent discovers and consumes a paid API
+
+```
+1. l402_config()                    → Understand capabilities
+2. l402_search("routing")           → Find services on Nostr
+3. l402_discover(service_url)       → Check pricing
+4. l402_fetch(service_url, ...)     → Pay and consume
+```
+
+### Agent buys credits for repeated access
+
+```
+1. l402_discover(url)               → Detect toll-booth, check tiers
+2. l402_buy_credits(url, 500)       → Buy 500-sat tier (555 credits)
+3. l402_fetch(url, ...) × N         → Use credits (no payment per-request)
+4. l402_balance(url)                → Check remaining credits
+```
+
+### Agent redeems Cashu tokens directly
+
+```
+1. l402_discover(url)               → Confirm toll-booth server
+2. l402_redeem_cashu(url, token)    → Direct ecash redemption
+3. l402_fetch(url, ...)             → Use credits from redemption
+```
+
+### Agent with no wallet (human-in-the-loop)
+
+```
+1. l402_fetch(url)                  → 402 received, amount shown
+2. Agent presents QR code to user   → Human pays via wallet app
+3. Poll detects payment             → Credential stored, data returned
+```

@@ -1,8 +1,10 @@
 # 402-mcp
 
-> 402-mcp is an MCP server that gives AI agents economic agency - the ability to discover, pay for, and consume any L402 or x402 payment-gated API without human registration, API keys, or middlemen. It speaks the L402 protocol natively, carries its own payment methods, and makes autonomous purchasing decisions within human-set safety limits.
+> 402-mcp is an MCP server that gives AI agents economic agency — the ability to discover, pay for, and consume any L402 or x402 payment-gated API without human registration, API keys, or middlemen. It speaks the L402 protocol natively, carries its own payment methods, and makes autonomous purchasing decisions within human-set safety limits.
 
-402-mcp is protocol-loyal: it works with any L402-compliant server (toll-booth, Aperture, or any conforming implementation), not just a specific vendor's stack. Bonus features activate automatically when talking to a toll-booth server. Three payment rails are supported - NWC (Nostr Wallet Connect), Cashu ecash, and human-in-the-loop - tried in that priority order so the agent picks the most autonomous option available.
+402-mcp is protocol-loyal: it works with any L402-compliant server (toll-booth, Aperture, or any conforming implementation), not just a specific vendor's stack. Bonus features activate automatically when talking to a toll-booth server. Three payment rails are supported — NWC (Nostr Wallet Connect), Cashu ecash, and human-in-the-loop — tried in that priority order so the agent picks the most autonomous option available.
+
+Agents can also discover paid APIs without knowing URLs upfront. The `l402_search` tool queries Nostr relays for kind 31402 service announcements — a decentralised registry of L402-enabled services.
 
 ## Getting Started
 
@@ -44,6 +46,7 @@ Add to your MCP configuration:
 | `NWC_URI` | — | Nostr Wallet Connect URI for autonomous Lightning payments |
 | `CASHU_TOKENS` | — | Path to Cashu token store file |
 | `MAX_AUTO_PAY_SATS` | 1000 | Safety cap; payments above this require human confirmation |
+| `MAX_SPEND_PER_MINUTE_SATS` | 10000 | Rolling 60-second spend cap across all payments |
 | `CREDENTIAL_STORE` | `~/.402-mcp/credentials.json` | Persistent macaroon/credential storage |
 | `TRANSPORT` | `stdio` | Transport mode: `stdio` or `http` |
 | `PORT` | 3402 | HTTP server port (when `TRANSPORT=http`) |
@@ -52,9 +55,10 @@ Add to your MCP configuration:
 
 - **L402** — an HTTP payment protocol where a server responds to unauthenticated requests with HTTP 402, a Lightning invoice, and a macaroon. The client pays the invoice, then sends `Authorization: L402 <macaroon>:<preimage>` to access the API.
 - **Economic agency** — the agent discovers a service, reads the price, pays the invoice, and retrieves the data, all within a single tool call. No human registration required.
-- **Safety cap** — `MAX_AUTO_PAY_SATS` sets the maximum any single autonomous payment can be. Above this limit, the agent asks for human approval.
-- **Credential store** — paid macaroons are persisted locally. Subsequent requests to the same server reuse credentials rather than paying again.
-- **Credit balance** - many L402 servers (including toll-booth) grant a credit balance after payment. 402-mcp tracks and caches that balance so the agent can reason about remaining capacity.
+- **Safety cap** — `MAX_AUTO_PAY_SATS` sets the maximum any single autonomous payment can be. Above this limit, the agent asks for human approval. A rolling 60-second spend cap (`MAX_SPEND_PER_MINUTE_SATS`) prevents runaway spending.
+- **Credential store** — paid macaroons are persisted locally and encrypted with AES-256-GCM. Subsequent requests to the same server reuse credentials rather than paying again.
+- **Credit balance** — many L402 servers (including toll-booth) grant a credit balance after payment. 402-mcp tracks and caches that balance so the agent can reason about remaining capacity.
+- **Service discovery** — agents can search for L402 services on Nostr relays by querying kind 31402 announcements, finding paid APIs by topic, capability, or payment method.
 
 ## Core L402 Tools
 
@@ -70,7 +74,7 @@ Probe an endpoint to discover its pricing without making a payment. Returns the 
 
 ### `l402_fetch`
 
-Make an HTTP request to an L402-protected endpoint. Handles the full payment flow automatically: detects 402 responses, pays the invoice if the amount is within the `MAX_AUTO_PAY_SATS` budget, stores the credential, and retries the request. Returns the response body on success. This is the primary tool for consuming L402 APIs.
+Make an HTTP request to an L402-protected endpoint. Handles the full payment flow automatically: detects 402 responses, pays the invoice if the amount is within the `MAX_AUTO_PAY_SATS` budget and the rolling spend cap, stores the credential, and retries the request. Returns the response body on success. This is the primary tool for consuming L402 APIs.
 
 ### `l402_pay`
 
@@ -83,6 +87,10 @@ List all stored L402 credentials and their cached credit balances. Shows which s
 ### `l402_balance`
 
 Check the cached credit balance for a specific server URL. Returns the number of credits remaining without making a network request. Use this before calling `l402_fetch` to confirm there is sufficient balance before consuming credits.
+
+### `l402_search`
+
+Search for L402 services on Nostr relays. Queries kind 31402 announcement events and returns matching services with their names, URLs, pricing, capabilities, and supported payment methods. Filter by query text, topics (e.g. "ai", "data"), or payment method. Use the returned URL with `l402_discover` or `l402_fetch` to interact with the service. This enables agents to find paid APIs without knowing URLs upfront — a decentralised alternative to API directories.
 
 ## toll-booth Extension Tools
 
@@ -110,9 +118,20 @@ The agent can override the payment method per-call, or you can configure only th
 
 ## Safety Model
 
-`MAX_AUTO_PAY_SATS` is the core safety primitive. Any autonomous payment above this threshold requires explicit human approval — the agent cannot bypass it. The agent reads this limit via `l402_config` and factors it into purchasing decisions (e.g. choosing a credit tier that fits within the cap, or asking the human before committing to a large purchase).
+Two safety primitives protect against runaway spending:
 
-The human stays in control of three things: the safety cap, which payment methods are available, and credential visibility. The agent operates within those boundaries, not around them.
+1. **`MAX_AUTO_PAY_SATS`** — caps any single autonomous payment. Above this threshold, the agent must ask for human approval.
+2. **`MAX_SPEND_PER_MINUTE_SATS`** — rolling 60-second window cap across all payments. Prevents rapid successive payments from exceeding a total budget even if each individual payment is below the per-payment cap.
+
+The human stays in control of three things: the safety caps, which payment methods are available, and credential visibility. The agent operates within those boundaries, not around them.
+
+## Security
+
+- **SSRF protection** — all outbound requests pass through an SSRF guard that blocks private/internal IP ranges by default. Set `SSRF_ALLOW_PRIVATE=true` only for local development.
+- **Credential encryption** — stored credentials are encrypted with AES-256-GCM. The encryption key is stored in the OS keychain when available, falling back to a file-based key with a warning.
+- **Preimage validation** — preimages are validated as hex before storage to prevent header injection.
+- **Spend tracking** — atomic `tryRecord()` prevents TOCTOU race conditions in concurrent spend checks.
+- **HTTP transport hardening** — rate limiting (100 req/60s per IP), security headers (CSP, X-Frame-Options, nosniff), and loopback-only binding by default.
 
 ## Ecosystem
 
@@ -123,3 +142,7 @@ https://github.com/TheCryptoDonkey/toll-booth
 **satgate** demonstrates the AI inference use case: a proxy that gates access to AI model endpoints (Ollama, vLLM, llama.cpp) behind L402 payments. Agents use 402-mcp to discover pricing, pay per-request or buy credit tiers, and consume inference capacity without pre-provisioned API keys.
 
 https://github.com/TheCryptoDonkey/satgate
+
+**402-announce** publishes HTTP 402 services on Nostr as kind 31402 events, making them discoverable by `l402_search`. Operators run it alongside their L402 server to announce capabilities, pricing, and payment methods to the decentralised network.
+
+https://github.com/TheCryptoDonkey/402-announce
