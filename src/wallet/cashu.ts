@@ -83,7 +83,7 @@ async function doPayInvoice(invoice: string, tokenStore: CashuTokenStore): Promi
     if (sendProofs) {
       // send() succeeded before the error — original proofs are dead on the mint.
       // Restore the new proofs instead; they are the only ones still valid.
-      console.warn('[l402-mcp] Cashu payment failed after send() succeeded — restoring swapped proofs')
+      console.warn('[402-mcp] Cashu payment failed after send() succeeded — restoring swapped proofs')
       restoreChangeProofs(
         tokenStore,
         sendProofs.getEncodedTokenV4,
@@ -147,6 +147,6 @@ function restoreChangeProofs(
     })
   } catch (err) {
     // Payment already succeeded; log but don't fail
-    console.warn('[l402-mcp] Failed to restore change proofs to token store:', err)
+    console.warn('[402-mcp] Failed to restore change proofs to token store:', err)
   }
 }

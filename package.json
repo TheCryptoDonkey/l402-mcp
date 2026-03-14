@@ -1,10 +1,10 @@
 {
-  "name": "l402-mcp",
+  "name": "402-mcp",
   "version": "2.1.0",
-  "description": "L402 client MCP - AI agents discover, pay for, and consume any L402-gated API",
+  "description": "L402 + x402 client MCP - AI agents discover, pay for, and consume any payment-gated API",
   "type": "module",
   "bin": {
-    "l402-mcp": "./build/index.js"
+    "402-mcp": "./build/index.js"
   },
   "main": "./build/index.js",
   "exports": {
@@ -60,10 +60,10 @@
     "ai-agent"
   ],
   "author": "TheCryptoDonkey",
-  "homepage": "https://github.com/TheCryptoDonkey/l402-mcp",
+  "homepage": "https://github.com/TheCryptoDonkey/402-mcp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TheCryptoDonkey/l402-mcp.git"
+    "url": "https://github.com/TheCryptoDonkey/402-mcp.git"
   },
   "engines": {
     "node": ">=18"

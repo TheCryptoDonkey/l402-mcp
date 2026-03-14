@@ -1,18 +1,18 @@
-# l402-mcp
+# 402-mcp
 
 [![MIT licence](https://img.shields.io/badge/licence-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-%3E%3D18-green)](https://nodejs.org/)
 [![Nostr](https://img.shields.io/badge/Nostr-Zap%20me-purple)](https://primal.net/p/npub1mgvlrnf5hm9yf0n5mf9nqmvarhvxkc6remu5ec3vf8r0txqkuk7su0e7q2)
 
-L402 client MCP that gives AI agents economic agency. Discover, pay for, and consume any L402-gated API - no human registration, no API keys, no middlemen.
+L402 + x402 client MCP that gives AI agents economic agency. Discover, pay for, and consume any payment-gated API - no human registration, no API keys, no middlemen.
 
 Works with **any L402-compliant server** (toll-booth, Aperture, or any future implementation), with bonus features when talking to a [toll-booth](https://github.com/TheCryptoDonkey/toll-booth) instance.
 
 ## Quick start
 
 ```bash
-npx l402-mcp
+npx 402-mcp
 ```
 
 ### Claude Desktop / Cursor
@@ -24,7 +24,7 @@ Add to your MCP configuration:
   "mcpServers": {
     "l402": {
       "command": "npx",
-      "args": ["l402-mcp"],
+      "args": ["402-mcp"],
       "env": {
         "NWC_URI": "nostr+walletconnect://...",
         "MAX_AUTO_PAY_SATS": "1000"
@@ -41,7 +41,7 @@ Add to your MCP configuration:
 | `NWC_URI` | - | Nostr Wallet Connect URI for autonomous Lightning payments |
 | `CASHU_TOKENS` | - | Path to Cashu token store file |
 | `MAX_AUTO_PAY_SATS` | 1000 | Safety cap; payments above this require human confirmation |
-| `CREDENTIAL_STORE` | `~/.l402-mcp/credentials.json` | Persistent macaroon/credential storage |
+| `CREDENTIAL_STORE` | `~/.402-mcp/credentials.json` | Persistent macaroon/credential storage |
 | `TRANSPORT` | `stdio` | Transport mode: `stdio` or `http` |
 | `PORT` | 3402 | HTTP server port (when `TRANSPORT=http`) |
 
@@ -102,13 +102,13 @@ Agent: "I need routing data from routing.trotters.cc"
 
 ## Privacy
 
-l402-mcp stores credentials locally on your machine only (`~/.l402-mcp/credentials.json`, encrypted at rest). No data is sent to any third party. No accounts, no tracking, no analytics. Payments use Lightning or Cashu — pseudonymous by design.
+402-mcp stores credentials locally on your machine only (`~/.402-mcp/credentials.json`, encrypted at rest). No data is sent to any third party. No accounts, no tracking, no analytics. Payments use Lightning or Cashu - pseudonymous by design.
 
-## Why l402-mcp?
+## Why 402-mcp?
 
-The L402 ecosystem is growing fast — Lightning Labs' [lightning-agent-tools](https://github.com/lightninglabs/lightning-agent-tools), Coinbase's x402, and others. l402-mcp is the **payment-rail agnostic** alternative:
+The L402 ecosystem is growing fast - Lightning Labs' [lightning-agent-tools](https://github.com/lightninglabs/lightning-agent-tools), Coinbase's x402, and others. 402-mcp is the **payment-rail agnostic** alternative:
 
-| | l402-mcp | Lightning Labs agent tools |
+| | 402-mcp | Lightning Labs agent tools |
 |---|---|---|
 | **Payment rails** | NWC + Cashu + human fallback | Lightning only |
 | **Node required?** | No — connects to any NWC wallet | Yes — runs LND |
@@ -117,7 +117,7 @@ The L402 ecosystem is growing fast — Lightning Labs' [lightning-agent-tools](h
 | **Credential storage** | Encrypted at rest (AES-256-GCM) | File permissions |
 | **Privacy** | No PII, SSRF protection, error sanitisation | Standard |
 
-Use Lightning Labs' tools if you want agents that **run their own Lightning node**. Use l402-mcp if you want agents that **pay from any wallet without infrastructure**.
+Use Lightning Labs' tools if you want agents that **run their own Lightning node**. Use 402-mcp if you want agents that **pay from any wallet without infrastructure**.
 
 ## Ecosystem
 
@@ -125,7 +125,7 @@ Use Lightning Labs' tools if you want agents that **run their own Lightning node
 |---------|------|
 | [toll-booth](https://github.com/TheCryptoDonkey/toll-booth) | Payment-rail agnostic HTTP 402 middleware |
 | [satgate](https://github.com/TheCryptoDonkey/satgate) | Pay-per-token AI inference proxy (built on toll-booth) |
-| **[l402-mcp](https://github.com/TheCryptoDonkey/l402-mcp)** | **MCP client — AI agents discover, pay, and consume L402 APIs** |
+| **[402-mcp](https://github.com/TheCryptoDonkey/402-mcp)** | **MCP client - AI agents discover, pay, and consume L402 + x402 APIs** |
 
 ---
 

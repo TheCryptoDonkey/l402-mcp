@@ -1,21 +1,21 @@
-# l402-mcp
+# 402-mcp
 
-> l402-mcp is an MCP server that gives AI agents economic agency — the ability to discover, pay for, and consume any L402-gated API without human registration, API keys, or middlemen. It speaks the L402 protocol natively, carries its own payment methods, and makes autonomous purchasing decisions within human-set safety limits.
+> 402-mcp is an MCP server that gives AI agents economic agency - the ability to discover, pay for, and consume any L402 or x402 payment-gated API without human registration, API keys, or middlemen. It speaks the L402 protocol natively, carries its own payment methods, and makes autonomous purchasing decisions within human-set safety limits.
 
-l402-mcp is protocol-loyal: it works with any L402-compliant server (toll-booth, Aperture, or any conforming implementation), not just a specific vendor's stack. Bonus features activate automatically when talking to a toll-booth server. Three payment rails are supported — NWC (Nostr Wallet Connect), Cashu ecash, and human-in-the-loop — tried in that priority order so the agent picks the most autonomous option available.
+402-mcp is protocol-loyal: it works with any L402-compliant server (toll-booth, Aperture, or any conforming implementation), not just a specific vendor's stack. Bonus features activate automatically when talking to a toll-booth server. Three payment rails are supported - NWC (Nostr Wallet Connect), Cashu ecash, and human-in-the-loop - tried in that priority order so the agent picks the most autonomous option available.
 
 ## Getting Started
 
 Run instantly with no configuration required:
 
 ```bash
-npx l402-mcp
+npx 402-mcp
 ```
 
 For HTTP transport (useful for remote agents or multi-client setups):
 
 ```bash
-TRANSPORT=http npx l402-mcp
+TRANSPORT=http npx 402-mcp
 ```
 
 ### Claude Desktop / Cursor
@@ -27,7 +27,7 @@ Add to your MCP configuration:
   "mcpServers": {
     "l402": {
       "command": "npx",
-      "args": ["l402-mcp"],
+      "args": ["402-mcp"],
       "env": {
         "NWC_URI": "nostr+walletconnect://...",
         "MAX_AUTO_PAY_SATS": "1000"
@@ -44,7 +44,7 @@ Add to your MCP configuration:
 | `NWC_URI` | — | Nostr Wallet Connect URI for autonomous Lightning payments |
 | `CASHU_TOKENS` | — | Path to Cashu token store file |
 | `MAX_AUTO_PAY_SATS` | 1000 | Safety cap; payments above this require human confirmation |
-| `CREDENTIAL_STORE` | `~/.l402-mcp/credentials.json` | Persistent macaroon/credential storage |
+| `CREDENTIAL_STORE` | `~/.402-mcp/credentials.json` | Persistent macaroon/credential storage |
 | `TRANSPORT` | `stdio` | Transport mode: `stdio` or `http` |
 | `PORT` | 3402 | HTTP server port (when `TRANSPORT=http`) |
 
@@ -54,7 +54,7 @@ Add to your MCP configuration:
 - **Economic agency** — the agent discovers a service, reads the price, pays the invoice, and retrieves the data, all within a single tool call. No human registration required.
 - **Safety cap** — `MAX_AUTO_PAY_SATS` sets the maximum any single autonomous payment can be. Above this limit, the agent asks for human approval.
 - **Credential store** — paid macaroons are persisted locally. Subsequent requests to the same server reuse credentials rather than paying again.
-- **Credit balance** — many L402 servers (including toll-booth) grant a credit balance after payment. l402-mcp tracks and caches that balance so the agent can reason about remaining capacity.
+- **Credit balance** - many L402 servers (including toll-booth) grant a credit balance after payment. 402-mcp tracks and caches that balance so the agent can reason about remaining capacity.
 
 ## Core L402 Tools
 
@@ -116,10 +116,10 @@ The human stays in control of three things: the safety cap, which payment method
 
 ## Ecosystem
 
-**toll-booth** is the server counterpart to l402-mcp. It is L402 payment middleware that embeds into any Node.js application (Express 5, Deno, Bun, Cloudflare Workers), gates endpoints behind Lightning or Cashu payments, and supports credit tiers and free tiers. Any server protected by toll-booth automatically gets the full set of l402-mcp tools including the extension tools.
+**toll-booth** is the server counterpart to 402-mcp. It is L402 payment middleware that embeds into any Node.js application (Express 5, Deno, Bun, Cloudflare Workers), gates endpoints behind Lightning or Cashu payments, and supports credit tiers and free tiers. Any server protected by toll-booth automatically gets the full set of 402-mcp tools including the extension tools.
 
 https://github.com/TheCryptoDonkey/toll-booth
 
-**satgate** demonstrates the AI inference use case: a proxy that gates access to AI model endpoints (Ollama, vLLM, llama.cpp) behind L402 payments. Agents use l402-mcp to discover pricing, pay per-request or buy credit tiers, and consume inference capacity without pre-provisioned API keys.
+**satgate** demonstrates the AI inference use case: a proxy that gates access to AI model endpoints (Ollama, vLLM, llama.cpp) behind L402 payments. Agents use 402-mcp to discover pricing, pay per-request or buy credit tiers, and consume inference capacity without pre-provisioned API keys.
 
 https://github.com/TheCryptoDonkey/satgate

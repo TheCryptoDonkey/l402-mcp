@@ -125,7 +125,7 @@ describe('config validation', () => {
 
   it('accepts CREDENTIAL_STORE within home directory', async () => {
     const { homedir } = await import('node:os')
-    vi.stubEnv('CREDENTIAL_STORE', `${homedir()}/.l402-mcp/test-creds.json`)
+    vi.stubEnv('CREDENTIAL_STORE', `${homedir()}/.402-mcp/test-creds.json`)
     const { loadConfig } = await import('../src/config.js')
     expect(() => loadConfig()).not.toThrow()
   })

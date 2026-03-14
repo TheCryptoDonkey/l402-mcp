@@ -1,7 +1,7 @@
 build/
 node_modules/
 *.tgz
-.l402-mcp/
+.402-mcp/
 *.db
 docs/plans/
 docs/superpowers/

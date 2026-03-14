@@ -38,7 +38,7 @@ function assertRange(name: string, value: number, min: number, max: number): voi
 }
 
 export function loadConfig(): L402Config {
-  const defaultCredentialStore = resolve(homedir(), '.l402-mcp', 'credentials.json')
+  const defaultCredentialStore = resolve(homedir(), '.402-mcp', 'credentials.json')
 
   const nwcUri = process.env.NWC_URI
   if (nwcUri !== undefined) {

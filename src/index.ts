@@ -93,13 +93,13 @@ const HEX_RE = /^[0-9a-fA-F]+$/
 function storeCredential(origin: string, macaroon: string, preimage: string, paymentHash: string, server: 'toll-booth' | null = null): void {
   if (!preimage || typeof preimage !== 'string' || preimage.length === 0) {
     try { origin = new URL(origin).hostname } catch { origin = '(invalid)' }
-    console.error(`[l402-mcp] Refusing to store credential for ${origin}: missing or empty preimage`)
+    console.error(`[402-mcp] Refusing to store credential for ${origin}: missing or empty preimage`)
     return
   }
   // Preimage is sent in Authorization headers — must be valid hex to prevent injection
   if (!HEX_RE.test(preimage)) {
     try { origin = new URL(origin).hostname } catch { origin = '(invalid)' }
-    console.error(`[l402-mcp] Refusing to store credential for ${origin}: preimage contains non-hex characters`)
+    console.error(`[402-mcp] Refusing to store credential for ${origin}: preimage contains non-hex characters`)
     return
   }
   credentialStore.set(origin, {
@@ -115,7 +115,7 @@ function storeCredential(origin: string, macaroon: string, preimage: string, pay
 
 // Create MCP server
 const server = new McpServer({
-  name: 'l402-mcp',
+  name: '402-mcp',
   version,
 })
 
@@ -231,7 +231,7 @@ if (config.transport === 'http') {
   app.get('/health', (_req, res) => {
     res.json({
       status: 'ok',
-      server: 'l402-mcp',
+      server: '402-mcp',
       version,
     })
   })
@@ -245,7 +245,7 @@ if (config.transport === 'http') {
   })
 
   const httpServer = app.listen(config.port, config.bindAddress, () => {
-    console.error(`l402-mcp HTTP server listening on ${config.bindAddress}:${config.port}`)
+    console.error(`402-mcp HTTP server listening on ${config.bindAddress}:${config.port}`)
     console.error('Warning: HTTP transport is intended for local/trusted networks only. For public exposure, use a reverse proxy with TLS, rate limiting, and authentication.')
   })
 
@@ -266,5 +266,5 @@ if (config.transport === 'http') {
   const transport = new StdioServerTransport()
   await server.connect(transport)
 
-  console.error('l402-mcp server running on stdio')
+  console.error('402-mcp server running on stdio')
 }

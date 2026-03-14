@@ -1,6 +1,6 @@
-# CLAUDE.md - l402-mcp
+# CLAUDE.md - 402-mcp
 
-L402 client MCP - AI agents discover, pay for, and consume any L402-gated API autonomously.
+L402 + x402 client MCP - AI agents discover, pay for, and consume any payment-gated API autonomously.
 
 ## Commands
 

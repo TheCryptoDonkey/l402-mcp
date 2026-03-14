@@ -3,14 +3,14 @@ import { readFileSync, writeFileSync, openSync, closeSync, mkdirSync, chmodSync,
 import { dirname, join } from 'node:path'
 import { homedir } from 'node:os'
 
-const SERVICE = 'l402-mcp'
+const SERVICE = '402-mcp'
 const ACCOUNT = 'encryption-key'
 const ALGORITHM = 'aes-256-gcm'
 const IV_BYTES = 12
 const HEX_RE = /^[0-9a-f]+$/
 const IV_HEX_LEN = 24   // 12 bytes = 24 hex chars
 const TAG_HEX_LEN = 32  // 16 bytes = 32 hex chars
-const FALLBACK_KEY_PATH = join(homedir(), '.l402-mcp', 'encryption.key')
+const FALLBACK_KEY_PATH = join(homedir(), '.402-mcp', 'encryption.key')
 
 export interface EncryptedPayload {
   iv: string
