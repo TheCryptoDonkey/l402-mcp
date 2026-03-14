@@ -305,7 +305,8 @@ describe('handlePay', () => {
     expect(spendTracker.recentSpend()).toBe(0)
   })
 
-  it('returns safe error when wallet throws', async () => {
+  it('returns safe error when wallet throws and rolls back spend', async () => {
+    const spendTracker = new SpendTracker()
     const mockWallet = {
       method: 'nwc' as const,
       available: true,
@@ -320,6 +321,7 @@ describe('handlePay', () => {
         resolveWallet: () => mockWallet,
         storeCredential: vi.fn().mockReturnValue(true),
         maxAutoPaySats: 1000,
+        spendTracker,
       },
     )
 
@@ -328,5 +330,32 @@ describe('handlePay', () => {
     expect(result.isError).toBe(true)
     // Should not leak the raw error with potential secrets
     expect(parsed.error).not.toContain('secret=abc123')
+    // Spend should be rolled back on exception
+    expect(spendTracker.recentSpend()).toBe(0)
+  })
+
+  it('rejects amountless invoices', async () => {
+    const mockWallet = {
+      method: 'nwc' as const,
+      available: true,
+      payInvoice: vi.fn(),
+    }
+
+    const result = await handlePay(
+      { invoice: 'lnbc1...amountless', macaroon: 'mac123' },
+      {
+        ...baseDeps,
+        cache: new ChallengeCache(),
+        resolveWallet: () => mockWallet,
+        storeCredential: vi.fn().mockReturnValue(true),
+        maxAutoPaySats: 1000,
+        decodeBolt11: () => ({ costSats: null, paymentHash: null, expiry: 3600 }),
+      },
+    )
+
+    const parsed = JSON.parse(result.content[0].text)
+    expect(parsed.paid).toBe(false)
+    expect(parsed.reason).toContain('no encoded amount')
+    expect(mockWallet.payInvoice).not.toHaveBeenCalled()
   })
 })

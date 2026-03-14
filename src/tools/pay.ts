@@ -73,32 +73,43 @@ export async function handlePay(
     }
   }
 
+  // Decode invoice to determine cost — done before try so catch can roll back
+  const decoded = deps.decodeBolt11(invoice)
+  const costSats = decoded.costSats
+
+  // Reject amountless invoices — cannot enforce spend limits without a known cost
+  if (costSats === null) {
+    return {
+      content: [{
+        type: 'text' as const,
+        text: JSON.stringify({ paid: false, reason: 'Invoice has no encoded amount — cannot enforce spend limits. Pay manually or use an invoice with an explicit amount.' }),
+      }],
+      isError: true as const,
+    }
+  }
+
+  if (costSats > deps.maxAutoPaySats) {
+    return {
+      content: [{
+        type: 'text' as const,
+        text: JSON.stringify({ paid: false, reason: `Invoice cost (${costSats} sats) exceeds auto-pay limit (${deps.maxAutoPaySats} sats)` }),
+      }],
+      isError: true as const,
+    }
+  }
+
+  // Atomic spend-limit check before payment
+  if (!deps.spendTracker.tryRecord(costSats, deps.maxSpendPerMinuteSats)) {
+    return {
+      content: [{
+        type: 'text' as const,
+        text: JSON.stringify({ paid: false, reason: 'Per-minute spend limit reached.' }),
+      }],
+      isError: true as const,
+    }
+  }
+
   try {
-    // Decode invoice to determine cost and enforce spend limits
-    const decoded = deps.decodeBolt11(invoice)
-    const costSats = decoded.costSats
-
-    if (costSats !== null && costSats > deps.maxAutoPaySats) {
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify({ paid: false, reason: `Invoice cost (${costSats} sats) exceeds auto-pay limit (${deps.maxAutoPaySats} sats)` }),
-        }],
-        isError: true as const,
-      }
-    }
-
-    // Atomic spend-limit check before payment
-    if (costSats !== null && !deps.spendTracker.tryRecord(costSats, deps.maxSpendPerMinuteSats)) {
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify({ paid: false, reason: 'Per-minute spend limit reached.' }),
-        }],
-        isError: true as const,
-      }
-    }
-
     // Set server origin for human wallet polling
     if (wallet.method === 'human' && cachedUrl && 'setServerOrigin' in wallet) {
       (wallet as any).setServerOrigin(new URL(cachedUrl).origin)
@@ -107,7 +118,7 @@ export async function handlePay(
     const result = await wallet.payInvoice(invoice)
 
     // Roll back spend-limit reservation if payment failed
-    if ((!result.paid || !result.preimage) && costSats !== null) {
+    if (!result.paid || !result.preimage) {
       deps.spendTracker.unrecord(costSats)
     }
 
@@ -139,6 +150,9 @@ export async function handlePay(
       }],
     }
   } catch (err) {
+    // Roll back spend reservation on exception (payment may not have completed)
+    deps.spendTracker.unrecord(costSats)
+
     return {
       content: [{
         type: 'text' as const,
