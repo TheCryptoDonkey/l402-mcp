@@ -181,7 +181,7 @@ export async function handleBuyCredits(
         })
       }
 
-      return { content, isError: true as const }
+      return { content }
     }
 
     return {

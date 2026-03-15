@@ -169,7 +169,7 @@ export async function handleFetch(
           })
         }
 
-        return { content, isError: true as const }
+        return { content }
       }
 
       const payResult = await deps.payInvoice(challenge.invoice, { serverOrigin: origin })
