@@ -1,3 +1,10 @@
+# [3.7.0](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.6.0...v3.7.0) (2026-03-15)
+
+
+### Features
+
+* add server description to guide AI usage naturally ([e787374](https://github.com/TheCryptoDonkey/402-mcp/commit/e78737483363cbec02048b3fb6ef34e54a6512ef))
+
 # [3.6.0](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.5.1...v3.6.0) (2026-03-15)
 
 
