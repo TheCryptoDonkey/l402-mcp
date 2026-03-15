@@ -1,3 +1,10 @@
+# [3.6.0](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.5.1...v3.6.0) (2026-03-15)
+
+
+### Features
+
+* rewrite tool descriptions for natural AI-driven usage ([9178741](https://github.com/TheCryptoDonkey/402-mcp/commit/917874114999443902d4b01b6089093b1f2b0924))
+
 ## [3.5.1](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.5.0...v3.5.1) (2026-03-15)
 
 
