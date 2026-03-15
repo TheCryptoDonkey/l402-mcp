@@ -1,0 +1,64 @@
+name: Bug Report
+description: Report a bug with 402-mcp
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Which tool?
+      options:
+        - l402_config
+        - l402_discover
+        - l402_fetch
+        - l402_pay
+        - l402_credentials
+        - l402_balance
+        - l402_search
+        - l402_buy_credits
+        - l402_redeem_cashu
+        - l402_store_token
+        - Other / not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: payment_method
+    attributes:
+      label: Payment method
+      options:
+        - NWC (Nostr Wallet Connect)
+        - Cashu
+        - Human-in-the-loop (QR code)
+        - N/A
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      placeholder: Describe the bug
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: Describe the expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Configure with...
+        2. Call tool...
+        3. See error...
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message
+      placeholder: Paste the full error message or stack trace
+    validations:
+      required: false

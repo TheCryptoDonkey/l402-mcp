@@ -1,0 +1,20 @@
+name: Feature Request
+description: Suggest an idea for 402-mcp
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What are you trying to do? Why is this needed?
+      placeholder: Describe the use case
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How do you think this should work? (optional)
+      placeholder: Describe your proposed solution
+    validations:
+      required: false
