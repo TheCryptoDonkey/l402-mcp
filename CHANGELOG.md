@@ -1,3 +1,10 @@
+## [3.4.1](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.4.0...v3.4.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* use even margin for UTF-8 QR to prevent RangeError ([91266a0](https://github.com/TheCryptoDonkey/402-mcp/commit/91266a08a4ac2cc497adc3a1e10e669953b08b91))
+
 # [3.4.0](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.3.4...v3.4.0) (2026-03-15)
 
 
