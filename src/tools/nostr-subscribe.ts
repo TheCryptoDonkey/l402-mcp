@@ -34,7 +34,7 @@ export function createNostrSubscriber(ssrfAllowPrivate = false): SearchDeps['sub
         // SSRF check: validate relay hostname against blocked IPs before connecting.
         // Convert ws(s):// to http(s):// for validation since validateUrl expects HTTP.
         try {
-          const httpUrl = url.replace(/^ws/, 'http')
+          const httpUrl = url.replace(/^wss:\/\//, 'https://').replace(/^ws:\/\//, 'http://')
           await validateUrl(httpUrl, ssrfAllowPrivate)
         } catch {
           console.error(`[402-mcp] SSRF: blocked relay connection to ${url}`)
