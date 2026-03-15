@@ -75,9 +75,10 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
             onevent: (responseEvent) => {
               clearTimeout(timeout)
               try {
-                // Verify event signature — relay-side filtering is advisory;
-                // a compromised relay could forge responses with fake preimages.
-                if (!verifyEvent(responseEvent)) {
+                // Verify the event is from the expected wallet — relay-side
+                // filtering is advisory; a compromised relay could inject
+                // events from a different pubkey.
+                if (responseEvent.pubkey !== walletPubkey || !verifyEvent(responseEvent)) {
                   ck.fill(0)
                   r.close()
                   resolve({ paid: false, method: 'nwc', reason: 'NWC response signature verification failed' })
@@ -85,10 +86,11 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
                 }
                 const decrypted = decrypt(responseEvent.content, ck)
                 const response = JSON.parse(decrypted)
-                if (typeof response.result?.preimage === 'string' && response.result.preimage) {
+                const preimage = response.result?.preimage
+                if (typeof preimage === 'string' && preimage && /^[0-9a-fA-F]{64}$/.test(preimage)) {
                   ck.fill(0)
                   r.close()
-                  resolve({ paid: true, preimage: response.result.preimage, method: 'nwc' })
+                  resolve({ paid: true, preimage, method: 'nwc' })
                 } else {
                   ck.fill(0)
                   r.close()
