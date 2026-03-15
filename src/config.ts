@@ -105,8 +105,12 @@ export function loadConfig(): L402Config {
     console.error('Warning: CORS_ORIGIN=* — any website can make cross-origin requests to the MCP HTTP transport. Restrict to specific origins in production.')
   }
 
-  // Refuse to operate if TLS verification is disabled (DNS rebinding risk)
+  // Block operation if TLS verification is disabled without explicit private-network opt-in.
+  // Disabling TLS defeats DNS-rebinding protection for HTTPS and WSS connections.
   if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
+    if (!config.ssrfAllowPrivate) {
+      throw new Error('NODE_TLS_REJECT_UNAUTHORIZED=0 disables TLS certificate validation, defeating DNS-rebinding protection. Set SSRF_ALLOW_PRIVATE=true to acknowledge the risk (local dev only).')
+    }
     console.error('Warning: NODE_TLS_REJECT_UNAUTHORIZED=0 — TLS certificate validation is disabled. HTTPS DNS rebinding attacks become possible. Do not use in production.')
   }
 

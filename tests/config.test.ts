@@ -161,8 +161,16 @@ describe('config validation', () => {
     warnSpy.mockRestore()
   })
 
-  it('warns when NODE_TLS_REJECT_UNAUTHORIZED is 0', async () => {
+  it('throws when NODE_TLS_REJECT_UNAUTHORIZED=0 without SSRF_ALLOW_PRIVATE', async () => {
     vi.stubEnv('NODE_TLS_REJECT_UNAUTHORIZED', '0')
+    const { loadConfig } = await import('../src/config.js')
+    expect(() => loadConfig()).toThrow('NODE_TLS_REJECT_UNAUTHORIZED')
+    expect(() => loadConfig()).toThrow('SSRF_ALLOW_PRIVATE')
+  })
+
+  it('warns but allows NODE_TLS_REJECT_UNAUTHORIZED=0 with SSRF_ALLOW_PRIVATE=true', async () => {
+    vi.stubEnv('NODE_TLS_REJECT_UNAUTHORIZED', '0')
+    vi.stubEnv('SSRF_ALLOW_PRIVATE', 'true')
     const warnSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { loadConfig } = await import('../src/config.js')
     loadConfig()
