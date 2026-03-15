@@ -194,7 +194,7 @@ describe('handleFetch', () => {
     const parsed = JSON.parse(jsonPart)
     expect(parsed.status).toBe(402)
     expect(parsed.costSats).toBe(10)
-    expect(parsed.message).toContain('Scan QR')
+    expect(parsed.message).toContain('Payment required')
 
     // Should delete stale credential
     expect((deps.credentialStore as any).delete).toHaveBeenCalledWith('https://api.example.com')
@@ -336,7 +336,7 @@ describe('handleFetch', () => {
     expect(parsed.costSats).toBe(21)
     expect(parsed.invoice).toBe('lnbc210n1test')
     expect(parsed.paymentHash).toBe('a'.repeat(64))
-    expect(parsed.message).toContain('Scan QR')
+    expect(parsed.message).toContain('Payment required')
     expect(parsed.message).toContain('l402_pay')
 
     // Image should be raw base64 (no data URI prefix)

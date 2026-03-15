@@ -155,7 +155,7 @@ export async function handleFetch(
                 costSats: decoded.costSats,
                 paymentHash: decoded.paymentHash,
                 paymentUrl: fullPaymentUrl,
-                message: `Pay ${decoded.costSats} sats: ${fullPaymentUrl}\n\nOpen the URL above to pay. After payment, call l402_pay with paymentHash "${decoded.paymentHash}" to complete.`,
+                message: `Payment required: ${decoded.costSats} sats. Open the URL to pay, then call l402_pay with paymentHash "${decoded.paymentHash}" to confirm and retry.`,
               }, null, 2),
             }],
           }
@@ -177,7 +177,7 @@ export async function handleFetch(
           costSats: decoded.costSats,
           invoice: challenge.invoice,
           paymentHash: decoded.paymentHash,
-          message: `Scan QR to pay ${decoded.costSats} sats. After payment, call l402_pay with paymentHash "${decoded.paymentHash}" to complete.`,
+          message: `Payment required: ${decoded.costSats} sats. Scan the QR to pay, then call l402_pay with paymentHash "${decoded.paymentHash}" to confirm and retry.`,
         }, null, 2)
 
         // Combine QR + JSON in one text block so terminals render the QR with newlines
