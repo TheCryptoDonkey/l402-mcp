@@ -1,3 +1,10 @@
+## [3.11.2](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.11.1...v3.11.2) (2026-03-16)
+
+
+### Bug Fixes
+
+* rewrite HNS resolver to use wire-format DoH (RFC 8484) ([eec4bd8](https://github.com/TheCryptoDonkey/402-mcp/commit/eec4bd8bf9db93f8eb7749f1b81fd4279c91bf96))
+
 ## [3.11.1](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.11.0...v3.11.1) (2026-03-16)
 
 
