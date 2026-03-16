@@ -134,6 +134,8 @@ The agent can override the method per-call, or you can configure only the method
 
 ## Ecosystem
 
+Browse live L402 services at [402.pub](https://402.pub) — the decentralised marketplace for payment-gated APIs.
+
 | Project | Role |
 |---------|------|
 | [toll-booth](https://github.com/TheCryptoDonkey/toll-booth) | Payment-rail agnostic HTTP 402 middleware |

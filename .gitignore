@@ -12,3 +12,4 @@ docs/superpowers/
 .env
 .env.*
 .mcp.json
+.idea/
