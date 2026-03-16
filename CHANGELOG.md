@@ -1,3 +1,11 @@
+## [3.11.1](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.11.0...v3.11.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* exempt human wallet from maxAutoPaySats cap, accept mixed IPv6 notation in HNS ([71f0407](https://github.com/TheCryptoDonkey/402-mcp/commit/71f04070705860283bb74ecdf2fb19af76e13f37))
+* security audit findings — maxAutoPaySats enforcement, HNS IP validation, redirect auth stripping ([414b6d0](https://github.com/TheCryptoDonkey/402-mcp/commit/414b6d023e5008a50a8983dff171c4344ec524fe))
+
 # [3.11.0](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.10.0...v3.11.0) (2026-03-16)
 
 
