@@ -1,4 +1,4 @@
-import { validateUrl, type ResolvedAddress } from './ssrf-guard.js'
+import { validateUrl, type ResolvedAddress, type ValidateUrlOptions } from './ssrf-guard.js'
 import { SsrfError, TimeoutError, RetryExhaustedError, DowngradeError, ResponseTooLargeError, TransportUnavailableError } from './errors.js'
 
 export interface ResilientFetchOptions {
@@ -15,6 +15,10 @@ export interface ResilientFetchConfig {
   backoffMs?: number
   maxResponseBytes?: number
   ssrfAllowPrivate?: boolean
+  /** HNS (Handshake) resolver — called on NXDOMAIN to resolve alternative TLDs */
+  resolveHns?: ValidateUrlOptions['resolveHns']
+  /** Whether a Tor SOCKS proxy is configured — enables .onion URL routing */
+  hasTorProxy?: boolean
 }
 
 const MAX_REDIRECTS = 5
@@ -87,6 +91,10 @@ export function createResilientFetch(
   const globalBackoff = config.backoffMs ?? DEFAULT_BACKOFF_MS
   const globalMaxResponseBytes = config.maxResponseBytes ?? 0
   const allowPrivate = config.ssrfAllowPrivate ?? false
+  const ssrfOptions: ValidateUrlOptions = {
+    resolveHns: config.resolveHns,
+    hasTorProxy: config.hasTorProxy ?? false,
+  }
 
   return async function resilientFetch(
     url: string | URL,
@@ -102,7 +110,7 @@ export function createResilientFetch(
     // SSRF check on the initial URL (never retried).
     // The resolved address is used to pin HTTP connections to the validated IP,
     // closing the DNS rebinding TOCTOU window.
-    const resolved = await validateUrl(urlStr, allowPrivate)
+    const resolved = await validateUrl(urlStr, allowPrivate, ssrfOptions)
 
     const totalAttempts = 1 + retries
     let lastError: Error | undefined
@@ -115,7 +123,7 @@ export function createResilientFetch(
 
       try {
         let response = await fetchWithTimeoutAndRedirects(
-          fetchFn, urlStr, init, timeoutMs, allowPrivate, urlStr, resolved,
+          fetchFn, urlStr, init, timeoutMs, allowPrivate, urlStr, resolved, ssrfOptions,
         )
 
         // If retryable status and we have retries left, drain body and continue
@@ -183,6 +191,7 @@ async function fetchWithTimeoutAndRedirects(
   allowPrivate: boolean,
   originalUrl: string,
   resolved?: ResolvedAddress,
+  ssrfOptions: ValidateUrlOptions = {},
 ): Promise<Response> {
   let currentUrl = url
   let currentInit = init ? { ...init } : {}
@@ -254,7 +263,7 @@ async function fetchWithTimeoutAndRedirects(
     }
 
     // SSRF check on redirect target; capture the resolved address for pinning
-    currentResolved = await validateUrl(currentUrl, allowPrivate)
+    currentResolved = await validateUrl(currentUrl, allowPrivate, ssrfOptions)
 
     // 301/302/303 change POST to GET and drop body
     if ([301, 302, 303].includes(response.status)) {

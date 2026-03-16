@@ -25,7 +25,7 @@ describe('createResilientFetch', () => {
       mockFetch.mockResolvedValue(new Response('ok', { status: 200 }))
       const resilientFetch = createResilientFetch(mockFetch, { ssrfAllowPrivate: false })
       await resilientFetch('http://example.com')
-      expect(mockValidateUrl).toHaveBeenCalledWith('http://example.com', false)
+      expect(mockValidateUrl).toHaveBeenCalledWith('http://example.com', false, expect.any(Object))
       expect(mockFetch).toHaveBeenCalled()
     })
 
@@ -86,7 +86,7 @@ describe('createResilientFetch', () => {
       mockFetch.mockResolvedValue(new Response('ok', { status: 200 }))
       const resilientFetch = createResilientFetch(mockFetch, { ssrfAllowPrivate: true })
       await resilientFetch('http://localhost:3000')
-      expect(mockValidateUrl).toHaveBeenCalledWith('http://localhost:3000', true)
+      expect(mockValidateUrl).toHaveBeenCalledWith('http://localhost:3000', true, expect.any(Object))
 
       // No pinning when allowPrivate (resolved is undefined);
       // URL passes through as-is (no URL parsing/reconstruction)
@@ -246,7 +246,7 @@ describe('createResilientFetch', () => {
 
       expect(res.status).toBe(200)
       expect(mockValidateUrl).toHaveBeenCalledTimes(2)
-      expect(mockValidateUrl).toHaveBeenCalledWith('http://other.example.com/api', false)
+      expect(mockValidateUrl).toHaveBeenCalledWith('http://other.example.com/api', false, expect.any(Object))
     })
 
     it('blocks redirect to private IP', async () => {
