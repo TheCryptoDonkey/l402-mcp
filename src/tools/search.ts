@@ -49,9 +49,10 @@ export function parseAnnounceEvent(event: NostrEvent): ParsedService {
 
   let capabilities: ParsedService['capabilities'] = []
   try {
-    const parsed = JSON.parse(event.content)
-    if (Array.isArray(parsed?.capabilities)) {
-      capabilities = parsed.capabilities
+    const parsed: unknown = JSON.parse(event.content)
+    const parsedObj = parsed as Record<string, unknown> | null
+    if (parsedObj && Array.isArray(parsedObj.capabilities)) {
+      capabilities = (parsedObj.capabilities as unknown[])
         .filter((c: unknown): c is Record<string, unknown> =>
           typeof c === 'object' && c !== null &&
           typeof (c as Record<string, unknown>).name === 'string' &&

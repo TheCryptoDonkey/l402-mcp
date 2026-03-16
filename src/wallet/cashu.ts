@@ -146,7 +146,7 @@ function restoreChangeProofs(
       amountSats: totalSats,
       addedAt: new Date().toISOString(),
     })
-  } catch (err) {
+  } catch {
     // Payment already succeeded; log but don't fail
     // Log generic message only — err may contain proof secrets
     console.warn('[402-mcp] Failed to restore change proofs to token store')

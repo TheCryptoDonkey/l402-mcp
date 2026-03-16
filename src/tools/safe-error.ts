@@ -8,7 +8,7 @@ export function safeErrorMessage(err: unknown): string {
   if (err instanceof DowngradeError) return 'HTTPS-to-HTTP downgrade blocked.'
   if (err instanceof RetryExhaustedError) return 'Request failed after multiple retries.'
 
-  if (err instanceof TypeError && (err as any).code === 'ERR_INVALID_URL') {
+  if (err instanceof TypeError && (err as NodeJS.ErrnoException).code === 'ERR_INVALID_URL') {
     return 'Invalid URL.'
   }
 

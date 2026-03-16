@@ -73,7 +73,7 @@ export async function handleBuyCredits(
       }
     }
 
-    const raw = await response.json()
+    const raw: unknown = await response.json()
     const validated = CreateInvoiceResponse.safeParse(raw)
     if (!validated.success) {
       return {

@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync, chmodSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { getOrCreateKey, encrypt, decrypt, isEncrypted, type EncryptedPayload } from './encryption.js'
+import { getOrCreateKey, encrypt, decrypt, isEncrypted } from './encryption.js'
 
 export interface StoredToken {
   token: string
@@ -58,12 +58,12 @@ export class CashuTokenStore {
   private load(): void {
     if (!existsSync(this.path)) return
     try {
-      const raw = JSON.parse(readFileSync(this.path, 'utf-8'))
+      const raw: unknown = JSON.parse(readFileSync(this.path, 'utf-8'))
       if (isEncrypted(raw)) {
-        const json = decrypt(raw as EncryptedPayload, this.key!)
+        const json = decrypt(raw, this.key!)
         const parsed = JSON.parse(json) as TokenStoreData
         this.data = Array.isArray(parsed.tokens) ? parsed : { tokens: [] }
-      } else if (Array.isArray(raw.tokens)) {
+      } else if (typeof raw === 'object' && raw !== null && Array.isArray((raw as TokenStoreData).tokens)) {
         // Legacy plaintext; migrate
         this.data = raw as TokenStoreData
         this.save() // Re-save as encrypted

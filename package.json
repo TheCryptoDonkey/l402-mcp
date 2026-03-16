@@ -21,6 +21,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "start": "node build/index.js",
     "start:http": "TRANSPORT=http node build/index.js",
     "prepublishOnly": "npm run typecheck && npm run build && npm test -- --exclude 'tests/e2e/l402-flow.integration.test.ts'"
@@ -39,6 +41,7 @@
     "keytar": "^7.9.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
@@ -48,18 +51,31 @@
     "@types/node": "^25.4.0",
     "@types/qrcode": "^1.5.5",
     "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^10.0.3",
     "semantic-release": "^25.0.3",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.57.0",
     "vitest": "^4.0.18"
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "l402",
+    "x402",
+    "http-402",
+    "402",
     "lightning",
+    "bitcoin",
     "cashu",
+    "ecash",
     "nwc",
+    "nostr-wallet-connect",
     "micropayments",
-    "ai-agent"
+    "machine-payments",
+    "ai-agent",
+    "autonomous-payments",
+    "macaroon",
+    "stablecoin"
   ],
   "author": "TheCryptoDonkey",
   "homepage": "https://github.com/TheCryptoDonkey/402-mcp",

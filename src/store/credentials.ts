@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync, chmodSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { getOrCreateKey, encrypt, decrypt, isEncrypted, type EncryptedPayload } from './encryption.js'
+import { getOrCreateKey, encrypt, decrypt, isEncrypted } from './encryption.js'
 
 export interface StoredCredential {
   macaroon: string
@@ -120,13 +120,13 @@ export class CredentialStore {
   private load(): void {
     if (!existsSync(this.path)) return
     try {
-      const raw = JSON.parse(readFileSync(this.path, 'utf-8'))
+      const raw: unknown = JSON.parse(readFileSync(this.path, 'utf-8'))
       if (isEncrypted(raw)) {
-        const json = decrypt(raw as EncryptedPayload, this.key!)
-        this.data = JSON.parse(json)
+        const json = decrypt(raw, this.key!)
+        this.data = JSON.parse(json) as Record<string, StoredCredential>
       } else {
         // Legacy plaintext; migrate
-        this.data = raw
+        this.data = raw as Record<string, StoredCredential>
         this.save() // Re-save as encrypted
       }
     } catch { this.data = {} }

@@ -85,7 +85,7 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
                   return
                 }
                 const decrypted = decrypt(responseEvent.content, ck)
-                const response = JSON.parse(decrypted)
+                const response = JSON.parse(decrypted) as { result?: { preimage?: string }, error?: { message?: string } }
                 const preimage = response.result?.preimage
                 if (typeof preimage === 'string' && preimage && /^[0-9a-fA-F]{64}$/.test(preimage)) {
                   ck.fill(0)
@@ -104,7 +104,7 @@ export function createNwcWallet(nwcUri: string): WalletProvider {
             },
           })
 
-          r.publish(event)
+          void r.publish(event)
         })
       } catch {
         // Never expose raw error messages — they may contain the NWC secret

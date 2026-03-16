@@ -29,6 +29,6 @@ export function registerConfigTool(
       description: 'Introspect the MCP\'s payment capabilities: which wallets are configured, spending limits, and stored credential count. Call this first to understand what payment methods are available.',
       inputSchema: {},
     },
-    async () => handleConfig(getState()),
+    () => handleConfig(getState()),
   )
 }

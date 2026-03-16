@@ -116,7 +116,7 @@ export async function handleFetch(
     const challenge = deps.parseL402(authHeader)
 
     let challengeBody: Record<string, unknown> = {}
-    try { challengeBody = await response.json() as Record<string, unknown> } catch {}
+    try { challengeBody = await response.json() as Record<string, unknown> } catch { /* non-JSON 402 body */ }
 
     const decoded = challenge ? deps.decodeBolt11(challenge.invoice) : { costSats: null, paymentHash: null, expiry: 3600 }
     const serverInfo = deps.detectServer(response.headers, challengeBody)

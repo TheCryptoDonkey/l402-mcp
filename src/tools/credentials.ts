@@ -19,6 +19,6 @@ export function registerCredentialsTool(server: McpServer, store: CredentialStor
       description: 'List all stored L402 credentials. Shows origin, cached credit balance, and server type. Balance values are cached and may be stale; check lastUsed timestamp.',
       inputSchema: {},
     },
-    async () => handleCredentials(store),
+    () => handleCredentials(store),
   )
 }

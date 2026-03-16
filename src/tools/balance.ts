@@ -51,6 +51,6 @@ export function registerBalanceTool(server: McpServer, store: CredentialStore): 
         origin: z.url().describe('The server origin (e.g. https://api.example.com)'),
       },
     },
-    async (args) => handleBalance(args, store),
+    (args) => handleBalance(args, store),
   )
 }

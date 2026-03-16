@@ -178,8 +178,11 @@ export function createResilientFetch(
     }
 
     // Final attempt failed
-    if (retries === 0) throw lastError!
-    throw new RetryExhaustedError(totalAttempts, urlStr, lastError!)
+    if (retries === 0) {
+      if (lastError) throw lastError
+      throw new Error('Request failed')
+    }
+    throw new RetryExhaustedError(totalAttempts, urlStr, lastError as Error)
   }
 }
 

@@ -100,7 +100,7 @@ export async function handleRedeemCashu(
       }
     }
 
-    const raw = await invoiceResponse.json()
+    const raw: unknown = await invoiceResponse.json()
     const invoiceValidated = InvoiceResponse.safeParse(raw)
     if (!invoiceValidated.success) {
       deps.spendTracker.unrecord(tokenSats)
@@ -144,7 +144,7 @@ export async function handleRedeemCashu(
     // local steps (parsing, credential storage) fail.
     redeemSucceeded = true
 
-    const redeemRaw = await redeemResponse.json()
+    const redeemRaw: unknown = await redeemResponse.json()
     const redeemValidated = RedeemResponseSchema.safeParse(redeemRaw)
     if (!redeemValidated.success) {
       return {

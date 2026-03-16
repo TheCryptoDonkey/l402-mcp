@@ -74,6 +74,6 @@ export function registerStoreTokenTool(server: McpServer, deps: StoreTokenDeps):
         token: z.string().min(10).max(30_000).describe('The L402 token in macaroon:preimage format'),
       },
     },
-    async (args) => handleStoreToken(args, deps),
+    (args) => handleStoreToken(args, deps),
   )
 }

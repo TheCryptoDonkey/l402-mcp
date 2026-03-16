@@ -1,7 +1,8 @@
+import type bolt11Type from 'bolt11'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
-const bolt11Lib = require('bolt11') as typeof import('bolt11')
+const bolt11Lib = require('bolt11') as typeof bolt11Type
 
 export interface DecodedInvoice {
   costSats: number | null
@@ -15,9 +16,9 @@ export function decodeBolt11(invoice: string): DecodedInvoice {
     const decoded = bolt11Lib.decode(invoice)
 
     let costSats: number | null = null
-    if (decoded.satoshis != null) {
+    if (decoded.satoshis !== null && decoded.satoshis !== undefined) {
       costSats = decoded.satoshis
-    } else if (decoded.millisatoshis != null) {
+    } else if (decoded.millisatoshis !== null && decoded.millisatoshis !== undefined) {
       costSats = Math.floor(Number(decoded.millisatoshis) / 1000)
     }
 
