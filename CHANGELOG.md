@@ -1,3 +1,19 @@
+# [3.13.0](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.12.0...v3.13.0) (2026-03-17)
+
+
+### Bug Fixes
+
+* add missing x402 and transport deps to E2E test ([0f05ff9](https://github.com/TheCryptoDonkey/402-mcp/commit/0f05ff96b34061b034b9a7773b954ce4b4eb714a))
+
+
+### Features
+
+* add listByMint and removeTokens to CashuTokenStore ([a28fa24](https://github.com/TheCryptoDonkey/402-mcp/commit/a28fa241e32a0acc41665f1362b4bf3523d191e7))
+* add NUT-18 xcashu payment request parser ([178601f](https://github.com/TheCryptoDonkey/402-mcp/commit/178601ff5d956e9822d0a1aa6c457e4ccd6e78c7))
+* add xcashu payment logic with mint matching and coin selection ([1fe5c04](https://github.com/TheCryptoDonkey/402-mcp/commit/1fe5c047a0e29456ad866ebe29f77e86fd5d8318))
+* integrate xcashu payment into fetch — detect, pay, retry ([babbfb5](https://github.com/TheCryptoDonkey/402-mcp/commit/babbfb59a0de8a8d08168cff0d3fb532be76554f))
+* shared cashu lock for xcashu and melt concurrency safety ([bc2fbd6](https://github.com/TheCryptoDonkey/402-mcp/commit/bc2fbd68069b416dc8657e31900e707fe305f559))
+
 # [3.12.0](https://github.com/TheCryptoDonkey/402-mcp/compare/v3.11.2...v3.12.0) (2026-03-17)
 
 
