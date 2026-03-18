@@ -46,7 +46,7 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
-    "@thecryptodonkey/toll-booth": "file:../toll-booth",
+    "@forgesworn/toll-booth": "file:../toll-booth",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^25.4.0",
@@ -78,11 +78,11 @@
     "macaroon",
     "stablecoin"
   ],
-  "author": "TheCryptoDonkey",
-  "homepage": "https://github.com/TheCryptoDonkey/402-mcp",
+  "author": "forgesworn",
+  "homepage": "https://github.com/forgesworn/402-mcp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TheCryptoDonkey/402-mcp.git"
+    "url": "https://github.com/forgesworn/402-mcp.git"
   },
   "engines": {
     "node": ">=18"

@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/TheCryptoDonkey/402-mcp.git
+git clone https://github.com/forgesworn/402-mcp.git
 cd 402-mcp
 npm install
 npm run build

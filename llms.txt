@@ -141,12 +141,12 @@ The human stays in control of three things: the safety caps, which payment metho
 
 **toll-booth** is the server counterpart to 402-mcp. It is L402 payment middleware that embeds into any Node.js application (Express 5, Deno, Bun, Cloudflare Workers), gates endpoints behind Lightning or Cashu payments, and supports credit tiers and free tiers. Any server protected by toll-booth automatically gets the full set of 402-mcp tools including the extension tools.
 
-https://github.com/TheCryptoDonkey/toll-booth
+https://github.com/forgesworn/toll-booth
 
 **satgate** demonstrates the AI inference use case: a proxy that gates access to AI model endpoints (Ollama, vLLM, llama.cpp) behind L402 payments. Agents use 402-mcp to discover pricing, pay per-request or buy credit tiers, and consume inference capacity without pre-provisioned API keys.
 
-https://github.com/TheCryptoDonkey/satgate
+https://github.com/forgesworn/satgate
 
 **402-announce** publishes HTTP 402 services on Nostr as kind 31402 events, making them discoverable by `l402_search`. Operators run it alongside their L402 server to announce capabilities, pricing, and payment methods to the decentralised network.
 
-https://github.com/TheCryptoDonkey/402-announce
+https://github.com/forgesworn/402-announce

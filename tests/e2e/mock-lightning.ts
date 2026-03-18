@@ -1,4 +1,4 @@
-import type { LightningBackend, Invoice, InvoiceStatus } from '@thecryptodonkey/toll-booth'
+import type { LightningBackend, Invoice, InvoiceStatus } from '@forgesworn/toll-booth'
 import { createHash, randomBytes } from 'node:crypto'
 
 /**

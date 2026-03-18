@@ -6,4 +6,4 @@ For details on spend safety, SSRF protection, credential encryption, transport h
 
 ## Reporting vulnerabilities
 
-If you find a security issue, please report it privately via [GitHub Security Advisories](https://github.com/TheCryptoDonkey/402-mcp/security/advisories).
+If you find a security issue, please report it privately via [GitHub Security Advisories](https://github.com/forgesworn/402-mcp/security/advisories).

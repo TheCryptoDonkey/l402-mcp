@@ -138,10 +138,10 @@ Browse live L402 services at [402.pub](https://402.pub) — the decentralised ma
 
 | Project | Role |
 |---------|------|
-| [toll-booth](https://github.com/TheCryptoDonkey/toll-booth) | Payment-rail agnostic HTTP 402 middleware |
-| [satgate](https://github.com/TheCryptoDonkey/satgate) | Pay-per-token AI inference proxy (built on toll-booth) |
-| **[402-mcp](https://github.com/TheCryptoDonkey/402-mcp)** | **MCP client — AI agents discover, pay, and consume L402 + x402 APIs** |
-| [402-announce](https://github.com/TheCryptoDonkey/402-announce) | Publish L402 services on Nostr for decentralised discovery |
+| [toll-booth](https://github.com/forgesworn/toll-booth) | Payment-rail agnostic HTTP 402 middleware |
+| [satgate](https://github.com/forgesworn/satgate) | Pay-per-token AI inference proxy (built on toll-booth) |
+| **[402-mcp](https://github.com/forgesworn/402-mcp)** | **MCP client — AI agents discover, pay, and consume L402 + x402 APIs** |
+| [402-announce](https://github.com/forgesworn/402-announce) | Publish L402 services on Nostr for decentralised discovery |
 
 402-mcp is the **payment-rail agnostic** alternative to Lightning Labs' [lightning-agent-tools](https://github.com/lightninglabs/lightning-agent-tools) and Coinbase's x402 — no Lightning node required, multiple wallets, encrypted credentials.
 
@@ -165,7 +165,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and guidelines.
 
 ---
 
-Built by [@TheCryptoDonkey](https://github.com/TheCryptoDonkey).
+Built by [@forgesworn](https://github.com/forgesworn).
 
 - Lightning tips: `thedonkey@strike.me`
 - Nostr: `npub1mgvlrnf5hm9yf0n5mf9nqmvarhvxkc6remu5ec3vf8r0txqkuk7su0e7q2`

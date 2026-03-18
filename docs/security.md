@@ -94,4 +94,4 @@ All outbound HTTP uses the resilient fetch wrapper (`src/fetch/resilient-fetch.t
 
 ## Reporting vulnerabilities
 
-If you find a security issue, please report it privately via GitHub Security Advisories on the [402-mcp repository](https://github.com/TheCryptoDonkey/402-mcp).
+If you find a security issue, please report it privately via GitHub Security Advisories on the [402-mcp repository](https://github.com/forgesworn/402-mcp).

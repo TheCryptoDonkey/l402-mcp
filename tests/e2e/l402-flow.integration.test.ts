@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { Booth, memoryStorage } from '@thecryptodonkey/toll-booth'
+import { Booth, memoryStorage } from '@forgesworn/toll-booth'
 import type { Server } from 'node:http'
 import { mockLightningBackend } from './mock-lightning.js'
 import { createMockUpstream } from './mock-upstream.js'
