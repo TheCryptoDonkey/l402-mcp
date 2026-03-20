@@ -1,3 +1,10 @@
+## [3.13.2](https://github.com/forgesworn/402-mcp/compare/v3.13.1...v3.13.2) (2026-03-20)
+
+
+### Bug Fixes
+
+* correct copyright to TheCryptoDonkey ([205d8e6](https://github.com/forgesworn/402-mcp/commit/205d8e63c67cbaf5ea5cf436cc43236a7f3efbd2))
+
 ## [3.13.1](https://github.com/forgesworn/402-mcp/compare/v3.13.0...v3.13.1) (2026-03-18)
 
 
